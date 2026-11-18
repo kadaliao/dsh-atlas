@@ -5,8 +5,17 @@ English | [简体中文](README.zh-CN.md)
 Your photo library on a globe, inside [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness).
 
 - **A night globe that zooms to street level.** Every place you took a photo glows; thumbnails pop up
-  where you were and split apart as you zoom in. Countries you have been to are lit up, the night side
-  of the Earth is shaded, and the globe turns slowly while you are not touching it.
+  where you were, captioned with the place and the years, and split apart as you zoom in. Zoomed in,
+  the map has 3D terrain and buildings, shops and landmarks, the **places you have been** (the venues
+  and landmarks Photos recognised in your photos — click one for its photos) and **Wikipedia nearby**
+  (what the articles around you say, with a picture). Countries you have been to are lit up, the
+  night side of the Earth is shaded, and the globe turns slowly while you are not touching it.
+- **Four basemaps.** *Night* (OpenStreetMap, recoloured for the night globe), *Amap* (China in full
+  Chinese detail; the night map abroad), *Satellite* and *Outline* (nothing fetched).
+- **The best photos first.** Wherever you open a set of photos — a pin, a place, a search, a trip —
+  a **featured** row comes first: the best few by Photos' own aesthetic score and your favourites,
+  near-duplicates and bursts skipped, spread over the days; screenshots, documents and saved images
+  kept out. Everything else follows, by time, one click away.
 - **Your trips, found for you.** Runs of photos taken far from home become trips, with their stops,
   dates and distance, drawn as flight arcs. Pick one to see its route; press **Story** and the camera
   flies stop by stop while that stop's best photos drift across the screen.
@@ -52,8 +61,12 @@ the page once after installing; **Atlas** appears in the left sidebar (or type `
   are left out.
 - **An index** of what it read (dates, coordinates, place names, labels) is cached under
   `~/.dsh/cache/atlas/`. Nothing is written to your conversations.
-- **Map tiles** come from [OpenFreeMap](https://openfreemap.org): like any web map, the tile server
-  sees which area you look at. Choose **Outline map only** in settings to fetch nothing.
+- **Map tiles**: like any web map, the tile servers see which area you look at. *Night* uses
+  [OpenFreeMap](https://openfreemap.org); 3D terrain uses the public Terrarium elevation tiles on AWS
+  Open Data; *Amap* additionally fetches Amap (高德) tiles inside China; *Satellite* fetches Esri World
+  Imagery. Choose *Outline* to fetch nothing.
+- **Wikipedia nearby**: zoomed in, the panel asks Wikipedia for articles around the centre of the
+  map, which sends that point. Turn it off in the layers menu or settings.
 - **History on this day** asks Wikipedia for the events of today's date — only the date is sent.
   It can be turned off in settings.
 - **The model** sees what its tools return: counts, dates, place names, photo ids and labels. It sees
@@ -82,14 +95,20 @@ The gear button in the panel:
 - **Home** — found from your photos (the place with the most days each year); pin it to the map's
   centre if that guess is wrong.
 - **A trip starts this far from home** — 100 km by default.
-- **Map** — street map with an outline fallback, or the outline map only.
+- **Map** — Night, Amap, Satellite or Outline (also in the layers menu, with the layers themselves:
+  places, Wikipedia nearby, 3D terrain, flight arcs, countries, night side, history markers).
 - **History on this day** — on or off.
 - **Read the library again** — Atlas also re-reads it by itself a few minutes after Photos changes.
 
-The same keys can be set on the plugin's row in `cordis.patch.yml`: `library`, `history`, `basemap`
-(`auto` | `offline`), `awayKm`.
+The same keys can be set on the plugin's row in `cordis.patch.yml`: `library`, `history`, `nearby`,
+`basemap` (`night` | `amap` | `satellite` | `offline`), `awayKm`.
 
 ## Limits
+
+- **Amap** is fetched from its public tile endpoint without a key, which Amap does not document for
+  third-party use; it may stop working at any time, and then China falls back to the night map.
+  Inside China, Atlas shifts what it draws to Amap's GCJ-02 datum so photos line up with the streets.
+- **Satellite** imagery is Esri's; check Esri's terms for your use. It is off unless you choose it.
 
 - Only photos with a location are on the map; the rest still count in search and "on this day".
 - Videos play when the original is on this Mac; with **Optimize Mac Storage** many originals stay in
@@ -121,7 +140,8 @@ Supercluster 9.1, Natural Earth 1:110m countries).
 
 [MapLibre GL JS](https://maplibre.org) (BSD-3-Clause), [Supercluster](https://github.com/mapbox/supercluster)
 (ISC), [OpenFreeMap](https://openfreemap.org) tiles © [OpenStreetMap](https://www.openstreetmap.org/copyright)
-contributors, [Natural Earth](https://www.naturalearthdata.com) (public domain),
+contributors, terrain from Mapzen Terrarium on AWS Open Data, © 高德地图 AutoNavi (Amap basemap),
+Esri World Imagery (Satellite basemap), [Natural Earth](https://www.naturalearthdata.com) (public domain),
 [Wikipedia](https://www.wikipedia.org) "On this day" (CC BY-SA).
 
 ## License

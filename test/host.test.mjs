@@ -88,7 +88,8 @@ const tool = (name) => tools.find((t) => t.name === name);
 
 test('settingsOf and mergeSettings normalize the row and the panel', { skip }, () => {
   const base = mod.settingsOf({ library: ' /x ', basemap: 'offline', awayKm: 5, home: { lat: 1, lng: 2 } });
-  assert.deepEqual(base, { enabled: true, library: '/x', history: true, basemap: 'offline', awayKm: 100, home: { lat: 1, lng: 2, city: '' } });
+  assert.deepEqual(base, { enabled: true, library: '/x', history: true, basemap: 'offline', nearby: true, awayKm: 100, home: { lat: 1, lng: 2, city: '' } });
+  assert.equal(mod.settingsOf({ basemap: 'auto' }).basemap, 'night', 'the old name');
   const merged = mod.mergeSettings(base, { history: false, home: null, awayKm: 300, basemap: 'nope' });
   assert.equal(merged.history, false);
   assert.equal(merged.home, null);

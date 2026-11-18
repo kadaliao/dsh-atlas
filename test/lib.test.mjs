@@ -278,3 +278,56 @@ test('fetchEvents asks Wikipedia once and keeps the answer', async () => {
 test('at() fixture helper is local time', () => {
   assert.equal(new Date((at('2024-04-12T12:00:00') + 28800) * 1000).toISOString(), '2024-04-12T12:00:00.000Z');
 });
+
+// --- quality, places --------------------------------------------------------------
+
+import { pickBest, qualityOf } from '../lib/quality.mjs';
+import { nearbyArticles, placesOf } from '../lib/places.mjs';
+
+test('qualityOf keeps good photos up and junk down', () => {
+  const photo = qualityOf({ aes: 0.6, camera: true, w: 4032, h: 3024 });
+  assert.ok(qualityOf({ aes: 0.6, camera: true, fav: true, w: 4032, h: 3024 }) > photo);
+  assert.ok(qualityOf({ aes: 0.6, shot: true, w: 1170, h: 2532 }) < 0);
+  assert.ok(qualityOf({ aes: 0.6, camera: false, w: 1080, h: 1080 }) < photo);
+  assert.ok(qualityOf({ aes: 0.6, camera: true, doc: true, w: 4032, h: 3024 }) < photo);
+  assert.ok(qualityOf({ aes: 0.6, camera: true, w: 320, h: 240 }) < photo);
+});
+
+test('pickBest skips bursts and spreads over days', () => {
+  const day = (d, s, score) => ({ id: `${d}-${s}`, t: d * 86400 + s, tz: 0, lat: 10, lng: 10, score });
+  // Days of similar quality: one from each before a second from any.
+  const even = [day(1, 0, 0.9), day(1, 10, 0.89), day(1, 5000, 0.85), day(2, 0, 0.8), day(3, 0, 0.75)];
+  assert.deepEqual(pickBest(even, 3).map((a) => a.id), ['1-0', '2-0', '3-0']);
+  assert.ok(!pickBest(even, 5).map((a) => a.id).includes('1-10'), 'a burst gives one');
+  // A dull day does not push out a great one.
+  const uneven = [day(1, 0, 0.9), day(1, 5000, 0.85), day(2, 0, 0.2)];
+  assert.deepEqual(pickBest(uneven, 2).map((a) => a.id), ['1-0', '1-5000']);
+  assert.equal(pickBest([], 3).length, 0);
+});
+
+test('placesOf finds venues where their photos are, one per name', () => {
+  const lex = { 1: { c: 'poi', w: '茶馆', s: [] }, 2: { c: 'area', w: '茶馆', s: [] }, 3: { c: 'area', w: '大省', s: [] }, 4: { c: 'scene', w: '猫', s: [] } };
+  const a = (i, lat, lng, ids) => ({ id: `p${i}`, t: i * 3600, tz: 0, lat, lng, score: i / 10, lex: ids });
+  const assets = [a(1, 30, 120, [1, 2, 3, 4]), a(2, 30.001, 120.001, [1, 2, 3]), a(3, 31, 121, [3]), a(4, 29, 119, [3])];
+  const places = placesOf(assets, lex);
+  assert.deepEqual(places.map((p) => p.name), ['茶馆'], 'the spread-out area and the scene are left out; one 茶馆');
+  assert.equal(places[0].photos, 2);
+  assert.equal(places[0].cover, 'p2');
+});
+
+test('nearbyArticles reads Wikipedia geosearch pages, nearest first', async () => {
+  let asked = '';
+  const fetchImpl = async (url) => {
+    asked = url;
+    return { ok: true, json: async () => ({ query: { pages: [
+      { title: '远', coordinates: [{ lat: 35.02, lon: 135.78 }], extract: 'far', fullurl: 'https://zh.wikipedia.org/wiki/远' },
+      { title: '近', coordinates: [{ lat: 35.0, lon: 135.7801 }], description: '寺', thumbnail: { source: 'https://x/t.jpg' } },
+      { title: '无坐标' },
+    ] } }) };
+  };
+  const list = await nearbyArticles(35, 135.78, 3000, 'zh', { fetchImpl });
+  assert.deepEqual(list.map((x) => x.title), ['近', '远']);
+  assert.equal(list[0].thumb, 'https://x/t.jpg');
+  assert.match(asked, /variant=zh-cn/);
+  assert.match(asked, /ggsradius=3000/);
+});

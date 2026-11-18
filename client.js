@@ -11,7 +11,11 @@ window.__ModuleLoader__.load({
     const VENDOR = `${ROUTE}/vendor/`;
     const TOOL_NAMES = ['atlas_search', 'atlas_show', 'atlas_trips', 'atlas_stats', 'atlas_today', 'atlas_look'];
     const RESULT_KIND = 'atlas-result';
-    const STYLE_URL = 'https://tiles.openfreemap.org/styles/dark';
+    // OpenFreeMap's most detailed style (POIs, 3D buildings, shaded relief), recoloured for night.
+    const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
+    const AMAP_TILES = 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}';
+    const ESRI_TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    const DEM_TILES = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
     const POLL_MS = 2000;
 
     // The map is a night globe whatever the app theme; its overlays are dark glass.
@@ -41,6 +45,21 @@ window.__ModuleLoader__.load({
     const DICTIONARY = {
       en: {
         lang: 'en',
+        featured: 'Featured',
+        allByTime: 'All {n} photos, by time',
+        basemapNight: 'Night',
+        basemapAmap: 'Amap',
+        basemapSatellite: 'Satellite',
+        basemapOfflineShort: 'Outline',
+        basemapAmapLong: 'Amap: China in full detail (an unofficial tile endpoint that may stop working; the night map abroad)',
+        basemapSatelliteLong: 'Satellite imagery (Esri World Imagery; check its terms for your use)',
+        basemapNightHint: 'OpenStreetMap at night, with shops, landmarks and 3D buildings.',
+        basemapAmapHint: 'Amap inside China (shops, estates, landmarks in Chinese); the night map elsewhere. Unofficial endpoint: it may stop working.',
+        basemapSatelliteHint: 'Esri World Imagery under the night map’s labels. Check Esri’s terms for your use.',
+        layerTerrain: '3D terrain',
+        layerPlaces: 'Places I have been',
+        layerNearby: 'Wikipedia nearby',
+        nearbyHint: 'Zoomed in, ask Wikipedia what is around the centre of the map (sends that point).',
         title: 'Atlas',
         toolTitle: 'Atlas',
         searchPlaceholder: 'Search your photos: Kyoto 2023, cat, beach video…',
@@ -88,7 +107,7 @@ window.__ModuleLoader__.load({
         found: 'Found',
         use: 'Use',
         basemap: 'Map',
-        basemapAuto: 'Street map (OpenFreeMap), outline map when offline',
+        basemapAuto: 'Night street map (OpenFreeMap): shops, landmarks, 3D buildings; outline map when offline',
         basemapOffline: 'Outline map only (nothing is fetched)',
         history: 'History on this day',
         historyHint: 'Fetch world events for today\'s date from Wikipedia. Only the date is sent.',
@@ -155,6 +174,21 @@ window.__ModuleLoader__.load({
       },
       zh: {
         lang: 'zh',
+        featured: '精选',
+        allByTime: '全部 {n} 张，按时间',
+        basemapNight: '夜景',
+        basemapAmap: '高德',
+        basemapSatellite: '卫星',
+        basemapOfflineShort: '轮廓',
+        basemapAmapLong: '高德：国内最详细（非官方图块接口，可能失效；国外用夜景地图）',
+        basemapSatelliteLong: '卫星影像（Esri World Imagery，使用前请看它的条款）',
+        basemapNightHint: '夜色下的 OpenStreetMap，有店铺、地标和 3D 建筑。',
+        basemapAmapHint: '国内用高德（店铺、小区、地标，全中文），国外用夜景地图。非官方接口，可能随时失效。',
+        basemapSatelliteHint: 'Esri 卫星影像，叠夜景地图的地名。使用前请看 Esri 的条款。',
+        layerTerrain: '3D 地形',
+        layerPlaces: '我去过的地方',
+        layerNearby: '附近百科',
+        nearbyHint: '放大后向维基百科查询地图中心附近的条目（会发送这个位置）。',
         title: '足迹',
         toolTitle: '足迹',
         searchPlaceholder: '搜照片：京都 2023、猫、海滩 视频……',
@@ -202,7 +236,7 @@ window.__ModuleLoader__.load({
         found: '找到的图库',
         use: '使用',
         basemap: '底图',
-        basemapAuto: '街道地图（OpenFreeMap），离线时用轮廓地图',
+        basemapAuto: '夜景街道地图（OpenFreeMap）：店铺、地标、3D 建筑，离线时用轮廓地图',
         basemapOffline: '只用内置轮廓地图（不联网）',
         history: '历史上的今天',
         historyHint: '从维基百科取今天日期的历史事件，只发送日期。',
@@ -374,6 +408,9 @@ window.__ModuleLoader__.load({
 .atl-pin:hover .atl-pin-img { transform: scale(1.12) translateY(-3px); }
 .atl-pin-tail { position: absolute; left: 50%; bottom: -6px; width: 10px; height: 10px; transform: translateX(-50%) rotate(45deg);
   background: rgba(255,255,255,.92); border-radius: 2px; z-index: -1; }
+.atl-pin-cap { position: absolute; left: 50%; top: calc(100% + 9px); transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 600;
+  color: #fff; padding: 2px 7px; border-radius: 8px; background: rgba(8,11,20,.78); border: 1px solid rgba(255,255,255,.12); pointer-events: none;
+  text-shadow: 0 1px 2px #000; letter-spacing: .2px; }
 .atl-pin-badge { position: absolute; top: -8px; right: -9px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px;
   background: ${C.amber}; color: #1d1200; font-weight: 700; font-size: 11px; line-height: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
 .atl-pin[data-hl="true"] .atl-pin-img { border-color: ${C.cyan}; box-shadow: 0 0 0 3px rgba(90,209,255,.35), 0 6px 18px rgba(0,0,0,.55); }
@@ -486,11 +523,143 @@ window.__ModuleLoader__.load({
 
     const styleCache = {};
     /** The basemap: OpenFreeMap's dark style with names in the UI language, else a bundled outline map. */
+    // --- colours: a light style turned into a night one ---------------------------
+
+    /** `[h, s, l, a]` (h in degrees, s/l/a 0–1) of a CSS colour string, or null. */
+    function parseColor(str) {
+      if (typeof str !== 'string') return null;
+      const v = str.trim().toLowerCase();
+      let r;
+      let g;
+      let b;
+      let a = 1;
+      let m;
+      if ((m = v.match(/^#([0-9a-f]{3,8})$/))) {
+        let hex = m[1];
+        if (hex.length === 3 || hex.length === 4) hex = [...hex].map((c) => c + c).join('');
+        r = parseInt(hex.slice(0, 2), 16);
+        g = parseInt(hex.slice(2, 4), 16);
+        b = parseInt(hex.slice(4, 6), 16);
+        if (hex.length === 8) a = parseInt(hex.slice(6, 8), 16) / 255;
+      } else if ((m = v.match(/^rgba?\(([^)]+)\)$/))) {
+        const p = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+        [r, g, b] = p;
+        if (p.length > 3) a = p[3];
+      } else if ((m = v.match(/^hsla?\(([^)]+)\)$/))) {
+        const p = m[1].replace(/%/g, '').split(/[\s,/]+/).filter(Boolean).map(Number);
+        return [p[0], p[1] / 100, p[2] / 100, p.length > 3 ? p[3] : 1];
+      } else return null;
+      if (![r, g, b].every(Number.isFinite)) return null;
+      r /= 255;
+      g /= 255;
+      b /= 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const l = (max + min) / 2;
+      let h = 0;
+      let sat = 0;
+      if (max !== min) {
+        const d = max - min;
+        sat = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+        h *= 60;
+      }
+      return [h, sat, l, a];
+    }
+    const hsla = ([h, sat, l, a]) => `hsla(${Math.round(h)}, ${Math.round(sat * 100)}%, ${Math.round(l * 100)}%, ${Math.round(a * 100) / 100})`;
+
+    /** The night version of one colour of a paint property. */
+    function nightColor(hsl, prop) {
+      const [h, sat, l, a] = hsl;
+      const water = h >= 185 && h <= 235 && sat > 0.25;
+      if (prop === 'text-color') return hsla([h, sat * 0.55, Math.max(0.62, 0.9 - l * 0.35), a]);
+      if (prop === 'text-halo-color') return hsla([220, 0.3, 0.06, Math.min(a, 0.85)]);
+      if (prop === 'line-color') return hsla([water ? 212 : h, sat * 0.45, water ? 0.2 : 0.17 + l * 0.2, a]);
+      if (prop === 'fill-extrusion-color') return hsla([220, 0.12, 0.16 + (1 - l) * 0.1, a]);
+      if (water) return hsla([214, 0.42, 0.075, a]);
+      return hsla([h, sat * 0.35, 0.075 + (1 - l) * 0.2, a]);
+    }
+
+    /** Recolour every literal colour in a paint value, expressions included. */
+    function recolor(value, prop) {
+      if (typeof value === 'string') {
+        const c = parseColor(value);
+        return c ? nightColor(c, prop) : value;
+      }
+      if (Array.isArray(value)) return value.map((v) => recolor(v, prop));
+      if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, recolor(v, prop)]));
+      return value;
+    }
+
+    /** Liberty, at night, with names in the UI language. */
+    function nightStyle(style, lang) {
+      const names = lang === 'zh' ? ['name:zh-Hans', 'name:zh', 'name:ja', 'name_int', 'name'] : ['name:en', 'name_int', 'name'];
+      for (const layer of style.layers) {
+        if (layer.type === 'symbol' && layer.layout && layer.layout['text-field'] !== undefined) {
+          // Chinese, then Japanese kanji (readable to a Chinese reader), then Latin.
+          layer.layout['text-field'] = ['coalesce', ...names.map((n) => ['get', n])];
+        }
+        if (layer.type === 'raster') {
+          layer.paint = { ...(layer.paint ?? {}), 'raster-brightness-max': 0.32, 'raster-saturation': -0.35, 'raster-contrast': 0.1 };
+          continue;
+        }
+        if (!layer.paint) continue;
+        for (const [prop, v] of Object.entries(layer.paint)) if (/color$/.test(prop)) layer.paint[prop] = recolor(v, prop);
+        if (layer.type === 'background') layer.paint['background-color'] = '#0b1220';
+      }
+      return style;
+    }
+
+    /** Layers drawn on top of the vector map for one basemap. */
+    function addBasemapLayers(style, basemap) {
+      if (basemap === 'amap') {
+        // China in detail: Amap's map, darkened. Abroad its tiles are blank, and blank tiles are made
+        // transparent (see the atlas-amap protocol) so the world map shows there.
+        style.sources['atl-amap'] = { type: 'raster', tiles: ['atlas-amap://{z}/{x}/{y}'], tileSize: 256, minzoom: 3, maxzoom: 18, bounds: [73, 15, 136, 54], attribution: '© 高德地图 AutoNavi' };
+        style.layers.push({
+          id: 'atl-amap',
+          type: 'raster',
+          source: 'atl-amap',
+          minzoom: 3,
+          paint: { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0, 4.5, 1], 'raster-brightness-min': 1, 'raster-brightness-max': 0, 'raster-hue-rotate': 180, 'raster-saturation': -0.25, 'raster-contrast': 0.15, 'raster-fade-duration': 150 },
+        });
+        style.metadata = { ...(style.metadata ?? {}), atlasGcj: true };
+      }
+      if (basemap === 'satellite') {
+        // Imagery under the night map's labels, roads and borders.
+        style.sources['atl-sat'] = { type: 'raster', tiles: [ESRI_TILES], tileSize: 256, maxzoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' };
+        const first = style.layers.findIndex((l) => l.type === 'line' || l.type === 'symbol');
+        style.layers = style.layers.filter((l) => l.type !== 'fill' && l.type !== 'fill-extrusion' && l.type !== 'raster');
+        style.layers.splice(Math.max(1, first < 0 ? 1 : Math.min(first, style.layers.length)), 0, { id: 'atl-sat', type: 'raster', source: 'atl-sat', paint: { 'raster-saturation': -0.1, 'raster-brightness-max': 0.85 } });
+        for (const l of style.layers) if (l.type === 'line' && l.paint) l.paint['line-opacity'] = 0.45;
+      }
+      return style;
+    }
+
+    let amapProtocol = false;
+    // A 1×1 transparent PNG, for Amap's blank tiles outside China.
+    const CLEAR_PNG = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='), (c) => c.charCodeAt(0));
+    function ensureAmapProtocol(maplibregl) {
+      if (amapProtocol || typeof maplibregl.addProtocol !== 'function') return;
+      amapProtocol = true;
+      maplibregl.addProtocol('atlas-amap', async (params, abort) => {
+        const [z, x, y] = params.url.replace('atlas-amap://', '').split('/').map(Number);
+        const url = AMAP_TILES.replace('{s}', String(1 + ((x + y) % 4))).replace('{x}', x).replace('{y}', y).replace('{z}', z);
+        const res = await fetch(url, { signal: abort.signal });
+        if (!res.ok) throw new Error(`amap ${res.status}`);
+        const buf = await res.arrayBuffer();
+        // Amap answers outside China with one small blank tile.
+        return { data: buf.byteLength < 400 ? CLEAR_PNG.buffer.slice(0) : buf };
+      });
+    }
+
+    /** The basemap: 'night' (OpenFreeMap liberty at night), 'amap', 'satellite' or 'offline'. */
     async function loadStyle(basemap, lang) {
-      const key = `${basemap}:${lang}`;
+      const mode = basemap === 'auto' || !basemap ? 'night' : basemap;
+      const key = `${mode}:${lang}`;
       if (styleCache[key]) return JSON.parse(JSON.stringify(styleCache[key]));
       let style = null;
-      if (basemap !== 'offline') {
+      if (mode !== 'offline') {
         try {
           const res = await fetch(STYLE_URL, { signal: AbortSignal.timeout(8000) });
           if (res.ok) style = await res.json();
@@ -499,18 +668,69 @@ window.__ModuleLoader__.load({
         }
       }
       if (style && Array.isArray(style.layers)) {
-        // Chinese, then Japanese kanji (readable to a Chinese reader), then Latin.
-        const names = lang === 'zh' ? ['name:zh-Hans', 'name:zh', 'name:ja', 'name_int', 'name'] : ['name:en', 'name_int', 'name'];
-        for (const layer of style.layers) {
-          if (layer.type === 'symbol' && layer.layout && layer.layout['text-field'] !== undefined) {
-            layer.layout['text-field'] = ['coalesce', ...names.map((n) => ['get', n])];
-          }
-        }
-        style.metadata = { ...(style.metadata ?? {}), atlasOnline: true };
+        style = addBasemapLayers(nightStyle(style, lang), mode);
+        style.metadata = { ...(style.metadata ?? {}), atlasOnline: true, atlasBasemap: mode };
       } else style = offlineStyle();
       style.projection = { type: 'globe' };
       styleCache[key] = JSON.parse(JSON.stringify(style));
       return style;
+    }
+
+    // --- China's map datum ---------------------------------------------------------
+    // Maps of China (Amap included) are drawn in GCJ-02, offset by a few hundred metres from GPS.
+    // With the Amap basemap, everything Atlas draws inside China is shifted the same way.
+
+    let chinaPolygons = null;
+    function setChina(countries) {
+      const f = (countries?.features ?? []).find((x) => x.properties?.iso === 'CN');
+      chinaPolygons = f ? f.geometry.coordinates : null;
+    }
+    function inChina(lng, lat) {
+      if (!chinaPolygons || lng < 73 || lng > 136 || lat < 3 || lat > 54) return false;
+      for (const poly of chinaPolygons) {
+        let inside = false;
+        const ring = poly[0];
+        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+          const [xi, yi] = ring[i];
+          const [xj, yj] = ring[j];
+          if (yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
+        }
+        if (inside) return true;
+      }
+      // Hong Kong and Macau are too small for the outline at this scale.
+      return lng > 113.4 && lng < 114.5 && lat > 22.08 && lat < 22.6;
+    }
+    function toGcj(lng, lat) {
+      if (!inChina(lng, lat)) return [lng, lat];
+      const A = 6378245.0;
+      const EE = 0.00669342162296594323;
+      const x = lng - 105;
+      const y = lat - 35;
+      const PI = Math.PI;
+      let dLat = -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+      dLat += ((20 * Math.sin(6 * x * PI) + 20 * Math.sin(2 * x * PI)) * 2) / 3;
+      dLat += ((20 * Math.sin(y * PI) + 40 * Math.sin((y / 3) * PI)) * 2) / 3;
+      dLat += ((160 * Math.sin((y / 12) * PI) + 320 * Math.sin((y * PI) / 30)) * 2) / 3;
+      let dLng = 300 + x + 2 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+      dLng += ((20 * Math.sin(6 * x * PI) + 20 * Math.sin(2 * x * PI)) * 2) / 3;
+      dLng += ((20 * Math.sin(x * PI) + 40 * Math.sin((x / 3) * PI)) * 2) / 3;
+      dLng += ((150 * Math.sin((x / 12) * PI) + 300 * Math.sin((x / 30) * PI)) * 2) / 3;
+      const rad = (lat / 180) * PI;
+      let magic = Math.sin(rad);
+      magic = 1 - EE * magic * magic;
+      const sq = Math.sqrt(magic);
+      dLat = (dLat * 180) / (((A * (1 - EE)) / (magic * sq)) * PI);
+      dLng = (dLng * 180) / ((A / sq) * Math.cos(rad) * PI);
+      return [lng + dLng, lat + dLat];
+    }
+    /** GPS from a GCJ-02 point (two rounds of the inverse; well under a metre). */
+    function fromGcj(lng, lat) {
+      let g = [lng, lat];
+      for (let i = 0; i < 2; i += 1) {
+        const back = toGcj(g[0], g[1]);
+        g = [g[0] - (back[0] - lng), g[1] - (back[1] - lat)];
+      }
+      return g;
     }
 
     /** The bundled outline map: land from Natural Earth, no tiles, no labels. */
@@ -574,11 +794,17 @@ window.__ModuleLoader__.load({
      * The globe: a MapLibre map with the footprint layers, thumbnail pins and
      * camera moves. Imperative; the panel drives it.
      */
-    function createGlobe(el, { maplibregl, Supercluster, style, home, onPick, onEvent, onUser }) {
+    function createGlobe(el, { maplibregl, Supercluster, style, home, onPick, onEvent, onUser, onPlace, onView, lang }) {
+      ensureAmapProtocol(maplibregl);
+      // With the Amap basemap, what Atlas draws in China is shifted to its datum.
+      const gcj = style?.metadata?.atlasGcj === true;
+      const P = (lng, lat) => (gcj ? toGcj(lng, lat) : [lng, lat]);
+      const unP = (lng, lat) => (gcj ? fromGcj(lng, lat) : [lng, lat]);
+      const Pp = (path) => (gcj ? path.map(([lng, lat]) => P(lng, lat)) : path);
       const map = new maplibregl.Map({
         container: el,
         style,
-        center: home ? [home.lng, home.lat] : [105, 30],
+        center: home ? P(home.lng, home.lat) : [105, 30],
         zoom: 1.55,
         minZoom: 0.6,
         maxZoom: 18.5,
@@ -596,7 +822,8 @@ window.__ModuleLoader__.load({
         events: [],
         eventMarkers: [],
         homeMarker: null,
-        layers: { arcs: true, night: true, countries: true, history: true },
+        layers: { arcs: true, night: true, countries: true, history: true, terrain: true, places: true, nearby: true },
+        cities: [],
         visited: [],
         trips: [],
         activeTrip: null,
@@ -617,7 +844,9 @@ window.__ModuleLoader__.load({
 
       // What the custom layers show, kept so they can be rebuilt after a style switch.
       const empty = { type: 'FeatureCollection', features: [] };
-      const data = { pts: empty, arcs: empty, active: empty, visited: [] };
+      const data = { pts: empty, arcs: empty, active: empty, visited: [], places: empty, wiki: empty };
+      // The style's own font, for the labels Atlas adds (none in the offline map).
+      const fontOf = () => map.getStyle().layers.find((l) => l.type === 'symbol' && l.layout?.['text-font'])?.layout['text-font'] ?? null;
       const addLayers = () => {
         if (map.getSource('atl-pts')) return;
         try {
@@ -658,6 +887,44 @@ window.__ModuleLoader__.load({
           },
         });
         map.addLayer({ id: 'atl-dots', type: 'circle', source: 'atl-pts', minzoom: 9, paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 1.6, 16, 4], 'circle-color': C.amber, 'circle-opacity': 0.85, 'circle-stroke-color': '#2a1600', 'circle-stroke-width': 0.6 } });
+        const online = style?.metadata?.atlasOnline === true;
+        const font = fontOf();
+        if (online) {
+          // Mountains: elevation for 3D terrain, and shading for the night map.
+          map.addSource('atl-dem', { type: 'raster-dem', tiles: [DEM_TILES], encoding: 'terrarium', tileSize: 256, maxzoom: 15, attribution: 'Terrain: Mapzen, AWS Open Data' });
+          map.addSource('atl-dem-shade', { type: 'raster-dem', tiles: [DEM_TILES], encoding: 'terrarium', tileSize: 256, maxzoom: 15 });
+          map.addLayer({ id: 'atl-hillshade', type: 'hillshade', source: 'atl-dem-shade', minzoom: 4, paint: { 'hillshade-shadow-color': '#02040a', 'hillshade-highlight-color': 'rgba(170,195,240,0.6)', 'hillshade-accent-color': '#16223a', 'hillshade-exaggeration': ['interpolate', ['linear'], ['zoom'], 4, 0.35, 10, 0.6, 15, 0.4] } }, map.getLayer('atl-amap') ? 'atl-amap' : before);
+        }
+        // Places you have been: venues and landmarks Photos named in your photos.
+        map.addSource('atl-places', { type: 'geojson', data: data.places });
+        map.addLayer({ id: 'atl-places-dot', type: 'circle', source: 'atl-places', minzoom: 10, filter: ['any', ['>=', ['zoom'], 13], ['>=', ['get', 'photos'], 20]], paint: { 'circle-radius': ['interpolate', ['linear'], ['get', 'photos'], 2, 3.5, 100, 7, 1000, 10], 'circle-color': 'rgba(255,181,71,0.25)', 'circle-stroke-color': C.amber, 'circle-stroke-width': 1.6 } });
+        if (font) {
+          map.addLayer({
+            id: 'atl-places-label',
+            type: 'symbol',
+            source: 'atl-places',
+            minzoom: 11,
+            filter: ['any', ['>=', ['zoom'], 13.5], ['>=', ['get', 'photos'], 15]],
+            layout: { 'text-field': ['get', 'label'], 'text-font': font, 'text-size': ['interpolate', ['linear'], ['get', 'photos'], 2, 11.5, 200, 14], 'text-offset': [0, 1.1], 'text-anchor': 'top', 'text-max-width': 9, 'symbol-sort-key': ['-', 0, ['get', 'photos']], 'text-optional': true },
+            paint: { 'text-color': '#ffd28a', 'text-halo-color': 'rgba(8,10,18,0.92)', 'text-halo-width': 1.6 },
+          });
+        }
+        // What Wikipedia knows around the centre of the map, when zoomed in.
+        map.addSource('atl-wiki', { type: 'geojson', data: data.wiki });
+        map.addLayer({ id: 'atl-wiki-dot', type: 'circle', source: 'atl-wiki', minzoom: 11, paint: { 'circle-radius': 5, 'circle-color': C.violet, 'circle-stroke-color': '#fff', 'circle-stroke-width': 1.2, 'circle-opacity': 0.9 } });
+        if (font) {
+          map.addLayer({ id: 'atl-wiki-label', type: 'symbol', source: 'atl-wiki', minzoom: 13, layout: { 'text-field': ['get', 'title'], 'text-font': font, 'text-size': 11.5, 'text-offset': [0, 0.9], 'text-anchor': 'top', 'text-max-width': 8, 'text-optional': true }, paint: { 'text-color': '#d9c6ff', 'text-halo-color': 'rgba(8,10,18,0.92)', 'text-halo-width': 1.5 } });
+        }
+        for (const id of ['atl-places-dot', 'atl-wiki-dot']) {
+          map.on('click', id, (e) => {
+            const f = e.features?.[0];
+            if (!f) return;
+            if (id === 'atl-places-dot') onPlace?.({ ...f.properties });
+            else onEvent?.({ wiki: true, ...f.properties, lng: Number(f.properties.lng), lat: Number(f.properties.lat) });
+          });
+          map.on('mouseenter', id, () => (map.getCanvas().style.cursor = 'pointer'));
+          map.on('mouseleave', id, () => (map.getCanvas().style.cursor = ''));
+        }
         st.ready = true;
         applyLayers();
         for (const fn of st.queue.splice(0)) fn();
@@ -716,12 +983,41 @@ window.__ModuleLoader__.load({
           badge.textContent = props.point_count_abbreviated ?? String(props.point_count);
           body.appendChild(badge);
         }
+        // Where and when, under the photo.
+        const cap = captionOf(props);
+        if (cap) {
+          const c = document.createElement('div');
+          c.className = 'atl-pin-cap';
+          c.textContent = cap;
+          body.appendChild(c);
+        }
         if (props.v) el.setAttribute('data-video', 'true');
         el.addEventListener('click', (ev) => {
           ev.stopPropagation();
           pick(el.__atl);
         });
         return el;
+      };
+      const yearsOf = (a, b) => {
+        const ya = new Date(a * 1000).getUTCFullYear();
+        const yb = new Date(b * 1000).getUTCFullYear();
+        return ya === yb ? String(ya) : `${ya}–${String(yb).slice(2)}`;
+      };
+      const captionOf = (props) => {
+        const z = map.getZoom();
+        if (z < 2.2 || z > 15.5 || props.cap === false) return '';
+        const t0 = props.t0 ?? props.t;
+        const t1 = props.t1 ?? props.t;
+        // Inside a city its name says nothing: the date does.
+        if (z >= 12.5 && t0) {
+          const day = (t) => new Date(t * 1000).toISOString().slice(0, 10).replace(/-/g, '.');
+          const a = day(t0);
+          const b = day(t1);
+          return a === b ? a : a.slice(0, 4) === b.slice(0, 4) ? `${a} – ${b.slice(5)}` : `${a.slice(0, 7)} – ${b.slice(0, 7)}`;
+        }
+        const city = st.cities[props.ci] ?? '';
+        const when = t0 ? yearsOf(t0, t1 ?? t0) : '';
+        return [city, when].filter(Boolean).join(' · ');
       };
       const pick = (feature) => {
         if (!feature || !st.index) return;
@@ -742,7 +1038,7 @@ window.__ModuleLoader__.load({
             // Keep the guess.
           }
           if (zoom > map.getZoom() + 0.5) map.flyTo({ center: [lng, lat], zoom, duration: 1400, essential: true });
-          onPick?.({ ids: leaves.sort((a, b) => a.t - b.t).map((p) => p.id), center: { lat, lng } });
+          onPick?.({ ids: leaves.sort((a, b) => a.t - b.t).map((p) => p.id), center: { lat, lng }, title: st.cities[feature.properties.ci] ?? '' });
         } else {
           if (map.getZoom() < 12) map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 13), duration: 1400, essential: true });
           onPick?.({ ids: [feature.properties.id], center: { lat, lng }, focus: feature.properties.id });
@@ -784,15 +1080,19 @@ window.__ModuleLoader__.load({
         const limitKm = zoom < 2.5 ? 6500 : zoom < 4 ? 4500 : Infinity;
         features = features.filter((f) => limitKm === Infinity || angularKm(center, { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] }) < limitKm);
         features.sort((a, b) => (b.properties.point_count ?? 1) - (a.properties.point_count ?? 1));
-        const max = zoom < 3 ? 18 : zoom < 6 ? 40 : 70;
+        const max = zoom < 3 ? 18 : zoom < 6 ? 36 : zoom < 13 ? 44 : 64;
         features = features.slice(0, max);
+        // Captions only on the biggest few, so they do not pile up.
+        const captioned = new Set(features.slice(0, 8).map((f) => String(f.properties.id)));
         const keep = new Set();
         for (const f of features) {
+          f.properties.cap = captioned.has(String(f.properties.id));
           const key = String(f.properties.id);
           keep.add(key);
           let pin = st.pins.get(key);
           const count = f.properties.point_count ?? 1;
-          if (pin && pin.count !== count) {
+          const cap = captionOf(f.properties);
+          if (pin && (pin.count !== count || pin.cap !== cap)) {
             pin.marker.remove();
             st.pins.delete(key);
             pin = undefined;
@@ -800,7 +1100,7 @@ window.__ModuleLoader__.load({
           if (!pin) {
             const el = makePin(f.properties);
             const marker = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -6] }).setLngLat(f.geometry.coordinates).addTo(map);
-            pin = { marker, el, count };
+            pin = { marker, el, count, cap };
             st.pins.set(key, pin);
           } else pin.marker.setLngLat(f.geometry.coordinates);
           pin.el.__atl = f;
@@ -814,6 +1114,15 @@ window.__ModuleLoader__.load({
       };
       map.on('move', schedulePins);
       map.on('moveend', refreshPins);
+      // The panel looks up what is around the centre once the camera rests.
+      map.on('moveend', () => {
+        if (st.destroyed || !st.ready) return;
+        const c = map.getCenter();
+        const [lng, lat] = unP(c.lng, c.lat);
+        const b = map.getBounds();
+        const radiusKm = angularKm({ lat: c.lat, lng: c.lng }, { lat: b.getNorth(), lng: b.getEast() });
+        onView?.({ lat, lng, zoom: map.getZoom(), radiusKm });
+      });
 
       // --- the user is in charge after any touch ---
       const touched = () => {
@@ -849,6 +1158,15 @@ window.__ModuleLoader__.load({
         map.setLayoutProperty('atl-visited', 'visibility', vis(st.layers.countries));
         map.setLayoutProperty('atl-visited-line', 'visibility', vis(st.layers.countries));
         for (const m of st.eventMarkers) m.getElement().style.display = st.layers.history ? '' : 'none';
+        for (const id of ['atl-places-dot', 'atl-places-label']) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis(st.layers.places && !st.quiet));
+        for (const id of ['atl-wiki-dot', 'atl-wiki-label']) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis(st.layers.nearby && !st.quiet));
+        if (map.getSource('atl-dem')) {
+          try {
+            map.setTerrain(st.layers.terrain ? { source: 'atl-dem', exaggeration: 1.35 } : null);
+          } catch {
+            // No terrain on this engine.
+          }
+        }
       };
 
       const fitPadding = () => {
@@ -861,20 +1179,25 @@ window.__ModuleLoader__.load({
       const api = {
         map,
         debug: () => ({ ready: st.ready, pins: st.pins.size, points: st.points.length, zoom: map.getZoom(), clusters: st.index ? st.index.getClusters([-180, -85, 180, 85], Math.floor(map.getZoom())).length : -1 }),
-        setPoints(points) {
+        setPoints(points, cities) {
           st.points = points;
-          const features = points.map((p) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [p.lng, p.lat] }, properties: { id: p.id, s: p.s, t: p.t, v: p.v } }));
+          if (Array.isArray(cities)) st.cities = cities;
+          const features = points.map((p) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: P(p.lng, p.lat) }, properties: { id: p.id, s: p.s, t: p.t, v: p.v, ci: p.ci } }));
           st.index = new Supercluster({
             radius: 56,
             maxZoom: 17,
             minPoints: 2,
-            map: (p) => ({ id: p.id, s: p.s, t: p.t, v: p.v }),
+            map: (p) => ({ id: p.id, s: p.s, t: p.t, t0: p.t, t1: p.t, v: p.v, ci: p.ci }),
             reduce: (acc, p) => {
+              // The cover is the best photo; the caption its city and the cluster's years.
               if (p.s > acc.s) {
                 acc.s = p.s;
                 acc.id = p.id;
                 acc.v = p.v;
+                acc.ci = p.ci;
               }
+              if (p.t0 < acc.t0) acc.t0 = p.t0;
+              if (p.t1 > acc.t1) acc.t1 = p.t1;
             },
           });
           st.index.load(features);
@@ -901,7 +1224,7 @@ window.__ModuleLoader__.load({
           st.trips = trips;
           data.arcs = {
             type: 'FeatureCollection',
-            features: trips.filter((t) => Array.isArray(t.path) && t.path.length > 1).map((t) => ({ type: 'Feature', properties: { id: t.id, abroad: t.abroad === true }, geometry: { type: 'LineString', coordinates: t.path } })),
+            features: trips.filter((t) => Array.isArray(t.path) && t.path.length > 1).map((t) => ({ type: 'Feature', properties: { id: t.id, abroad: t.abroad === true }, geometry: { type: 'LineString', coordinates: Pp(t.path) } })),
           };
           whenReady(() => setData('atl-arcs', data.arcs));
         },
@@ -909,7 +1232,7 @@ window.__ModuleLoader__.load({
         setActiveTrip(trip, progress = 1) {
           st.activeTrip = trip;
           cancelAnimationFrame(progressRaf);
-          data.active = trip ? { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: trip.path } } : empty;
+          data.active = trip ? { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: Pp(trip.path) } } : empty;
           st.progress = progress;
           whenReady(() => {
             setData('atl-active', data.active);
@@ -947,7 +1270,7 @@ window.__ModuleLoader__.load({
               ev.stopPropagation();
               onEvent?.(e);
             });
-            const m = new maplibregl.Marker({ element: dot }).setLngLat([e.lng, e.lat]).addTo(map);
+            const m = new maplibregl.Marker({ element: dot }).setLngLat(P(e.lng, e.lat)).addTo(map);
             if (!st.layers.history) dot.style.display = 'none';
             st.eventMarkers.push(m);
           }
@@ -959,7 +1282,21 @@ window.__ModuleLoader__.load({
           const dot = document.createElement('div');
           dot.className = 'atl-home';
           dot.title = h.city || '';
-          st.homeMarker = new maplibregl.Marker({ element: dot }).setLngLat([h.lng, h.lat]).addTo(map);
+          st.homeMarker = new maplibregl.Marker({ element: dot }).setLngLat(P(h.lng, h.lat)).addTo(map);
+        },
+        setPlaces(places) {
+          data.places = {
+            type: 'FeatureCollection',
+            features: places.map((p) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: P(p.lng, p.lat) }, properties: { id: p.id, name: p.name, photos: p.photos, days: p.days, label: `${p.name}${p.photos > 1 ? ` · ${p.photos}` : ''}`, first: p.first, last: p.last, cover: p.cover, lat: p.lat, lng: p.lng } })),
+          };
+          whenReady(() => setData('atl-places', data.places));
+        },
+        setWiki(articles) {
+          data.wiki = {
+            type: 'FeatureCollection',
+            features: articles.map((a) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: P(a.lng, a.lat) }, properties: { ...a } })),
+          };
+          whenReady(() => setData('atl-wiki', data.wiki));
         },
         setLayers(layers) {
           st.layers = { ...st.layers, ...layers };
@@ -972,13 +1309,15 @@ window.__ModuleLoader__.load({
           applyLayers();
         },
         popup(lngLat, node) {
-          const p = new maplibregl.Popup({ className: 'atl-popup', closeButton: true, maxWidth: '320px', offset: 14 }).setLngLat(lngLat).setDOMContent(node).addTo(map);
+          const p = new maplibregl.Popup({ className: 'atl-popup', closeButton: true, maxWidth: '320px', offset: 14 }).setLngLat(P(lngLat[0], lngLat[1])).setDOMContent(node).addTo(map);
           return p;
         },
         fitBounds(bbox, { maxZoom = 13, duration = 2200 } = {}) {
           if (!Array.isArray(bbox) || bbox.length !== 4) return;
           st.lastUser = Date.now();
-          const [w, s, e, n] = bbox;
+          const [w0, s0, e0, n0] = bbox;
+          const [w, s] = P(w0, s0);
+          const [e, n] = P(e0, n0);
           if (Math.abs(e - w) < 0.002 && Math.abs(n - s) < 0.002) {
             map.flyTo({ center: [w, s], zoom: Math.min(maxZoom, 14), duration, essential: true });
             return;
@@ -989,9 +1328,11 @@ window.__ModuleLoader__.load({
             map.flyTo({ center: [(w + e) / 2, (s + n) / 2], zoom: 4, duration, essential: true });
           }
         },
+        /** Fly the camera; `center` is GPS, shifted here when the basemap needs it. */
         flyTo(opts) {
           st.lastUser = Date.now();
-          map.flyTo({ essential: true, ...opts });
+          const center = Array.isArray(opts.center) ? P(opts.center[0], opts.center[1]) : opts.center;
+          map.flyTo({ essential: true, ...opts, ...(center ? { center } : {}) });
         },
         /** Promise resolved when the camera stops. */
         settle() {
@@ -1009,9 +1350,11 @@ window.__ModuleLoader__.load({
           st.frozen = on;
           if (on) st.lastUser = Date.now();
         },
+        /** The map's centre in GPS terms. */
         center() {
           const c = map.getCenter();
-          return { lat: c.lat, lng: c.lng };
+          const [lng, lat] = unP(c.lng, c.lat);
+          return { lat, lng };
         },
         resize() {
           map.resize();
@@ -1341,20 +1684,62 @@ window.__ModuleLoader__.load({
     function PhotosTab(props) {
       const t = props.t;
       const { selection } = props;
+      const [best, setBest] = useState(null);
       const [photos, setPhotos] = useState([]);
+      const [showAll, setShowAll] = useState(false);
       const [limit, setLimit] = useState(240);
       useEffect(() => {
         let alive = true;
         setLimit(240);
         setPhotos([]);
+        setBest(null);
+        setShowAll(false);
         if (!selection?.ids?.length) return undefined;
-        loadPhotos(selection.ids.slice(0, 1200)).then((list) => alive && setPhotos(list)).catch(() => {});
+        // The featured few first: the best photos, no near-duplicates, spread over days.
+        if (selection.ids.length > 1) {
+          postJson(`${ROUTE}/curate`, { ids: selection.ids, n: 13 })
+            .then((b) => alive && setBest(b?.ok ? b.best : []))
+            .catch(() => alive && setBest([]));
+        } else setBest([]);
         return () => {
           alive = false;
         };
       }, [selection]);
+      const few = selection?.ids?.length <= 13;
+      useEffect(() => {
+        let alive = true;
+        if (!selection?.ids?.length || !(showAll || few)) return undefined;
+        loadPhotos(selection.ids.slice(0, 1500)).then((list) => alive && setPhotos(list)).catch(() => {});
+        return () => {
+          alive = false;
+        };
+      }, [selection, showAll]);
       if (!selection?.ids?.length) return h('div', { style: { color: C.muted, padding: 16 } }, t('empty'));
-      // Group by day.
+      const head = [
+        h('div', { key: 'h', style: { fontWeight: 650, fontSize: 15, marginTop: 4 } }, selection.title || t('selection')),
+        h('div', { key: 's', style: { color: C.muted, marginTop: 2, marginBottom: 10 } }, [t('photos', { n: fmtNum(selection.ids.length) }), selection.subtitle].filter(Boolean).join(' · ')),
+      ];
+      const featured = best && best.length > 1 && !few
+        ? h(
+            'div',
+            { key: 'f', style: { marginBottom: 14 } },
+            h('div', { style: { fontSize: 11.5, color: C.amber, fontWeight: 650, letterSpacing: 0.4, margin: '0 0 7px' } }, t('featured')),
+            h(
+              'div',
+              { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 } },
+              best.map((id, i) =>
+                h(
+                  'div',
+                  { key: id, className: 'atl-tile', style: i === 0 ? { gridColumn: 'span 3', aspectRatio: '16 / 10' } : undefined, onClick: () => props.onOpen(best, i) },
+                  h('img', { src: i === 0 ? largeUrl(id) : thumbUrl(id), loading: 'lazy', alt: '' }),
+                ),
+              ),
+            ),
+          )
+        : best === null && !few
+          ? h('div', { key: 'f', className: 'atl-spin', style: { margin: '20px auto' } })
+          : null;
+      // Everything, by day.
       const groups = [];
       for (const p of photos.slice(0, limit)) {
         const day = p.local.slice(0, 10);
@@ -1363,26 +1748,25 @@ window.__ModuleLoader__.load({
         else groups.push({ day, place: placeOf(p.place), items: [p] });
       }
       const ids = photos.map((p) => p.id);
-      return h(
-        'div',
-        { style: { padding: '4px 14px 16px' } },
-        h('div', { style: { fontWeight: 650, fontSize: 15, marginTop: 4 } }, selection.title || t('selection')),
-        h('div', { style: { color: C.muted, marginTop: 2, marginBottom: 10 } }, [t('photos', { n: fmtNum(selection.ids.length) }), selection.subtitle].filter(Boolean).join(' · ')),
-        groups.map((g) =>
-          h(
-            'div',
-            { key: g.day, style: { marginBottom: 12 } },
-            h('div', { style: { fontSize: 11.5, color: C.muted, margin: '0 0 6px', display: 'flex', gap: 6 } }, h('span', { style: { color: C.ink, fontWeight: 600 } }, g.day), g.place),
-            h(
-              'div',
-              { className: 'atl-grid' },
-              g.items.map((p) => h('div', { key: p.id, className: 'atl-tile', 'data-video': p.video ? 'true' : 'false', onClick: () => props.onOpen(ids, ids.indexOf(p.id)) }, h('img', { src: thumbUrl(p.id), loading: 'lazy', alt: '' }))),
+      const all = showAll || few
+        ? [
+            ...groups.map((g) =>
+              h(
+                'div',
+                { key: g.day, style: { marginBottom: 12 } },
+                h('div', { style: { fontSize: 11.5, color: C.muted, margin: '0 0 6px', display: 'flex', gap: 6 } }, h('span', { style: { color: C.ink, fontWeight: 600 } }, g.day), g.place),
+                h(
+                  'div',
+                  { className: 'atl-grid' },
+                  g.items.map((p) => h('div', { key: p.id, className: 'atl-tile', 'data-video': p.video ? 'true' : 'false', onClick: () => props.onOpen(ids, ids.indexOf(p.id)) }, h('img', { src: thumbUrl(p.id), loading: 'lazy', alt: '' }))),
+                ),
+              ),
             ),
-          ),
-        ),
-        photos.length > limit ? h('button', { className: 'atl-btn', style: { width: '100%', justifyContent: 'center' }, onClick: () => setLimit(limit + 240) }, '…') : null,
-        photos.length === 0 ? h('div', { className: 'atl-spin', style: { margin: '20px auto' } }) : null,
-      );
+            photos.length > limit ? h('button', { key: 'more', className: 'atl-btn', style: { width: '100%', justifyContent: 'center' }, onClick: () => setLimit(limit + 240) }, '…') : null,
+            photos.length === 0 ? h('div', { key: 'sp', className: 'atl-spin', style: { margin: '20px auto' } }) : null,
+          ]
+        : h('button', { key: 'all', className: 'atl-btn', style: { width: '100%', justifyContent: 'center' }, onClick: () => setShowAll(true) }, t('allByTime', { n: fmtNum(selection.ids.length) }));
+      return h('div', { style: { padding: '4px 14px 16px' } }, head, featured, all);
     }
 
     function TripsTab(props) {
@@ -1723,10 +2107,11 @@ window.__ModuleLoader__.load({
             h(
               'div',
               { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
-              ['auto', 'offline'].map((b) => h('span', { key: b, className: 'atl-chip', 'data-on': (s.basemap ?? 'auto') === b ? 'true' : 'false', style: { whiteSpace: 'normal' }, onClick: () => save({ basemap: b }) }, t(b === 'auto' ? 'basemapAuto' : 'basemapOffline'))),
+              ['night', 'amap', 'satellite', 'offline'].map((b) => h('span', { key: b, className: 'atl-chip', 'data-on': ((s.basemap === 'auto' ? 'night' : s.basemap) ?? 'night') === b ? 'true' : 'false', style: { whiteSpace: 'normal' }, onClick: () => save({ basemap: b }) }, t({ night: 'basemapAuto', amap: 'basemapAmapLong', satellite: 'basemapSatelliteLong', offline: 'basemapOffline' }[b]))),
             ),
           ),
           row(t('history'), h('span', { className: 'atl-chip', 'data-on': s.history !== false ? 'true' : 'false', onClick: () => save({ history: s.history === false }) }, s.history !== false ? 'ON' : 'OFF'), t('historyHint')),
+          row(t('layerNearby'), h('span', { className: 'atl-chip', 'data-on': s.nearby !== false ? 'true' : 'false', onClick: () => save({ nearby: s.nearby === false }) }, s.nearby !== false ? 'ON' : 'OFF'), t('nearbyHint')),
           row(
             t('rebuild'),
             h('button', { className: 'atl-btn', disabled: busy || state?.status === 'building', onClick: () => (setBusy(true), postJson(`${ROUTE}/rebuild`, {}).then((st) => st && props.onSaved(st, true)).finally(() => setBusy(false))) }, busy ? t('rebuilding') : t('rebuild')),
@@ -1806,13 +2191,23 @@ window.__ModuleLoader__.load({
       const [playing, setPlaying] = useState(false);
       const [settingsOpen, setSettingsOpen] = useState(false);
       const [layersOpen, setLayersOpen] = useState(false);
-      const [layers, setLayers] = useState({ arcs: true, night: true, countries: true, history: true });
+      const [layers, setLayers] = useState(() => {
+        const base = { arcs: true, night: true, countries: true, history: true, terrain: true, places: true, nearby: true };
+        try {
+          return { ...base, ...JSON.parse(localStorage.getItem('atlas.layers') || '{}') };
+        } catch {
+          return base;
+        }
+      });
       const [width, setWidth] = useState(1200);
       const [reload, setReload] = useState(0);
       const alive = useRef(true);
       const commandSeq = useRef(0);
+      const citiesRef = useRef([]);
+      const [places, setPlaces] = useState([]);
+      const nearbyTimer = useRef(0);
       const live = useRef({});
-      live.current = { points, trips, range, filter, selection };
+      live.current = { points, trips, range, filter, selection, layers };
 
       // The index's state; polls while it is being built.
       useEffect(() => {
@@ -1861,11 +2256,13 @@ window.__ModuleLoader__.load({
           if (!on || !b?.ok) return;
           const list = b.ids.map((id, i) => {
             const d = new Date((b.t[i] + (b.tz[i] ?? 0)) * 1000);
-            return { id, lat: b.lat[i], lng: b.lng[i], t: b.t[i], tz: b.tz[i], s: b.s[i], v: b.v[i], cc: b.cc[i], y: d.getUTCFullYear(), m: d.getUTCMonth() };
+            return { id, lat: b.lat[i], lng: b.lng[i], t: b.t[i], tz: b.tz[i], s: b.s[i], v: b.v[i], cc: b.cc[i], ci: b.ci?.[i], y: d.getUTCFullYear(), m: d.getUTCMonth() };
           });
+          citiesRef.current = Array.isArray(b.cities) ? b.cities : [];
           setPoints(list);
         });
         getJson(`${ROUTE}/trips`).then((b) => on && b?.ok && setTrips(b.trips));
+        getJson(`${ROUTE}/places`).then((b) => on && b?.ok && setPlaces(b.places));
         getJson(`${ROUTE}/today?lang=${lang}`).then((b) => on && b?.ok && setToday(b));
         return () => {
           on = false;
@@ -1876,17 +2273,17 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         if (!ready || !mapRef.current || globeRef.current) return undefined;
         let cancelled = false;
-        Promise.all([ensureLibs(), loadStyle(state.settings?.basemap ?? 'auto', lang)])
+        Promise.all([ensureLibs(), loadStyle(state.settings?.basemap ?? 'night', lang), loadCountries().then(setChina)])
           .then(([libs, style]) => {
             if (cancelled || !mapRef.current) return;
             const globe = createGlobe(mapRef.current, {
               ...libs,
               style,
               home: state.home,
-              onPick: ({ ids, center, focus }) => {
+              onPick: ({ ids, center, focus, title }) => {
                 setStory(null);
                 const first = photoCache.get(ids[0]);
-                setSelection({ ids, title: '', subtitle: '', center, key: Date.now() });
+                setSelection({ ids, title: title || '', subtitle: '', center, key: Date.now() });
                 setTab('photos');
                 if (focus) setViewer({ ids, index: 0 });
                 void first;
@@ -1896,6 +2293,9 @@ window.__ModuleLoader__.load({
                 });
               },
               onEvent: (e) => showEvent(e),
+              onPlace: (p) => showPlace(p),
+              onView: (v) => lookAround(v),
+              lang,
             });
             globeRef.current = globe;
             globe.setHome(state.home);
@@ -1958,8 +2358,13 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         const g = globeRef.current;
         if (!g || !mapReady || !points) return;
-        g.setPoints(shown.current.list);
+        g.setPoints(shown.current.list, citiesRef.current);
       }, [mapReady, filterKey]);
+      useEffect(() => {
+        const g = globeRef.current;
+        if (!g || !mapReady) return;
+        g.setPlaces(places);
+      }, [mapReady, places]);
       useEffect(() => {
         const g = globeRef.current;
         if (!g || !mapReady) return;
@@ -1977,6 +2382,11 @@ window.__ModuleLoader__.load({
       }, [mapReady, today]);
       useEffect(() => {
         globeRef.current?.setLayers(layers);
+        try {
+          localStorage.setItem('atlas.layers', JSON.stringify(layers));
+        } catch {
+          // Remembered for this page only.
+        }
       }, [mapReady, layers]);
       useEffect(() => {
         const g = globeRef.current;
@@ -2054,11 +2464,11 @@ window.__ModuleLoader__.load({
       const showEvent = (e) => {
         const g = globeRef.current;
         if (!g || e.lat === null) return;
-        g.flyTo({ center: [e.lng, e.lat], zoom: Math.max(5, Math.min(11, g.map.getZoom() + 3)), duration: 2200 });
+        if (!e.wiki) g.flyTo({ center: [e.lng, e.lat], zoom: Math.max(5, Math.min(11, g.map.getZoom() + 3)), duration: 2200 });
         const node = document.createElement('div');
         const head = document.createElement('div');
         head.style.cssText = `color:${C.violet};font-weight:700;font-size:11.5px;letter-spacing:.3px`;
-        head.textContent = `${t('inHistory')} · ${e.year}`;
+        head.textContent = e.wiki ? `${e.title}${e.description ? ` · ${e.description}` : ''}` : `${t('inHistory')} · ${e.year}`;
         node.appendChild(head);
         if (e.thumb) {
           const img = document.createElement('img');
@@ -2069,7 +2479,7 @@ window.__ModuleLoader__.load({
         }
         const body = document.createElement('div');
         body.style.cssText = 'margin-top:6px';
-        body.textContent = e.text;
+        body.textContent = e.wiki ? e.extract : e.text;
         node.appendChild(body);
         if (e.near) {
           const near = document.createElement('div');
@@ -2086,7 +2496,38 @@ window.__ModuleLoader__.load({
           a.style.cssText = 'display:inline-block;margin-top:8px';
           node.appendChild(a);
         }
-        setTimeout(() => g.popup([e.lng, e.lat], node), 900);
+        if (e.wiki) g.popup([e.lng, e.lat], node);
+        else setTimeout(() => g.popup([e.lng, e.lat], node), 900);
+      };
+
+      /** A named place on the map: its photos, in the drawer. */
+      const showPlace = (p) => {
+        postJson(`${ROUTE}/search`, { lexeme: p.id, located: true, all: true, limit: 1 }).then((b) => {
+          if (!b?.ok || !alive.current) return;
+          const ids = b.result.all ?? [];
+          const first = Number(p.first);
+          const last = Number(p.last);
+          const when = Number.isFinite(first) ? dateRange(localDay(first, 0), localDay(last, 0)) : '';
+          setSelection({ ids, title: p.name, subtitle: [t('daysN', { n: p.days }), when].filter(Boolean).join(' · '), key: Date.now() });
+          setTab('photos');
+        });
+      };
+
+      /** Once the camera rests zoomed in: Wikipedia around the centre. */
+      const lookAround = (v) => {
+        clearTimeout(nearbyTimer.current);
+        const g = globeRef.current;
+        if (!g) return;
+        if (v.zoom < 11.5 || !live.current.layers?.nearby) {
+          if (v.zoom < 10.5) g.setWiki([]);
+          return;
+        }
+        nearbyTimer.current = setTimeout(() => {
+          const r = Math.round(Math.min(10, Math.max(0.5, v.radiusKm)) * 1000);
+          getJson(`${ROUTE}/nearby?lat=${v.lat.toFixed(4)}&lng=${v.lng.toFixed(4)}&r=${r}&lang=${lang}`)
+            .then((b) => b?.ok && alive.current && globeRef.current?.setWiki(b.articles ?? []))
+            .catch(() => {});
+        }, 700);
       };
 
       const showMemory = (m) => {
@@ -2174,16 +2615,45 @@ window.__ModuleLoader__.load({
         ),
       );
 
+      const basemap = state?.settings?.basemap === 'auto' ? 'night' : state?.settings?.basemap ?? 'night';
+      const switchBasemap = (b) => {
+        if (b === basemap) return;
+        postJson(`${ROUTE}/settings`, { basemap: b }).then((st) => {
+          if (!st || !alive.current) return;
+          globeRef.current?.destroy();
+          globeRef.current = null;
+          setMapReady(false);
+          setPoints(null);
+          setState({ ...st, status: 'building' });
+          setReload((r) => r + 1);
+        });
+      };
       const layersMenu = layersOpen
         ? h(
             'div',
-            { className: 'atl-glass atl-fade', style: { position: 'absolute', top: 66, right: 14, zIndex: 25, padding: 10, display: 'flex', flexDirection: 'column', gap: 6, width: 200 } },
+            { className: 'atl-glass atl-fade', onClick: (e) => e.stopPropagation(), style: { position: 'absolute', top: 66, right: 14, zIndex: 25, padding: 12, display: 'flex', flexDirection: 'column', gap: 6, width: 236 } },
+            h('div', { style: { color: C.faint, fontSize: 11.5, letterSpacing: 0.4 } }, t('basemap')),
+            h(
+              'div',
+              { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 } },
+              [
+                ['night', t('basemapNight')],
+                ['amap', t('basemapAmap')],
+                ['satellite', t('basemapSatellite')],
+                ['offline', t('basemapOfflineShort')],
+              ].map(([k, label]) => h('span', { key: k, className: 'atl-chip', 'data-on': basemap === k ? 'true' : 'false', style: { justifyContent: 'center' }, onClick: () => switchBasemap(k) }, label)),
+            ),
+            h('div', { style: { color: C.faint, fontSize: 11.5, letterSpacing: 0.4 } }, t('layers')),
             [
+              ['places', t('layerPlaces')],
+              ['nearby', t('layerNearby')],
+              ['terrain', t('layerTerrain')],
               ['arcs', t('layerArcs')],
               ['countries', t('layerCountries')],
               ['night', t('layerNight')],
               ['history', t('layerHistory')],
             ].map(([k, label]) => h('span', { key: k, className: 'atl-chip', 'data-on': layers[k] ? 'true' : 'false', onClick: () => setLayers({ ...layers, [k]: !layers[k] }) }, label)),
+            h('div', { style: { color: C.faint, fontSize: 11, lineHeight: 1.5, marginTop: 4 } }, t(basemap === 'amap' ? 'basemapAmapHint' : basemap === 'satellite' ? 'basemapSatelliteHint' : 'basemapNightHint')),
           )
         : null;
 

@@ -16,6 +16,8 @@ import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { createAtlas } from './lib/atlas.mjs';
+import { nearbyArticles, placesOf } from './lib/places.mjs';
+import { pickBest } from './lib/quality.mjs';
 import { parseText, search } from './lib/search.mjs';
 import { flagOf, yearOf } from './lib/stats.mjs';
 import { fetchEvents, memoriesOn, rankEvents } from './lib/today.mjs';
@@ -50,7 +52,10 @@ const VENDOR = {
   'supercluster.min.js': 'text/javascript; charset=utf-8',
   'countries.json': 'application/json; charset=utf-8',
 };
-const SETTINGS_FIELDS = ['library', 'home', 'history', 'basemap', 'awayKm'];
+const SETTINGS_FIELDS = ['library', 'home', 'history', 'basemap', 'awayKm', 'nearby'];
+/** Basemaps the panel offers; `auto` is the old name of `night`. */
+export const BASEMAPS = ['night', 'amap', 'satellite', 'offline'];
+const basemapOf = (v, fallback = 'night') => (v === 'auto' ? 'night' : BASEMAPS.includes(v) ? v : fallback);
 
 /** The DSH home the cache lives under. */
 function homeDir() {
@@ -68,7 +73,8 @@ export function settingsOf(config) {
     enabled: c.enabled !== false,
     library: typeof c.library === 'string' ? c.library.trim() : '',
     history: c.history !== false,
-    basemap: c.basemap === 'offline' ? 'offline' : 'auto',
+    basemap: basemapOf(c.basemap),
+    nearby: c.nearby !== false,
     awayKm: Number.isFinite(away) && away >= 10 ? away : 100,
     home: validHome(c.home),
   };
@@ -88,7 +94,8 @@ export function mergeSettings(base, saved) {
   const s = saved && typeof saved === 'object' ? saved : {};
   if (typeof s.library === 'string') out.library = s.library.trim();
   if (typeof s.history === 'boolean') out.history = s.history;
-  if (s.basemap === 'offline' || s.basemap === 'auto') out.basemap = s.basemap;
+  if (typeof s.basemap === 'string' && (BASEMAPS.includes(s.basemap) || s.basemap === 'auto')) out.basemap = basemapOf(s.basemap);
+  if (typeof s.nearby === 'boolean') out.nearby = s.nearby;
   if (Number.isFinite(Number(s.awayKm)) && Number(s.awayKm) >= 10) out.awayKm = Number(s.awayKm);
   if ('home' in s) out.home = validHome(s.home);
   return out;
@@ -632,7 +639,7 @@ export function apply(ctx, config) {
         ok: true,
         version: VERSION,
         ...st,
-        settings: { library: settings.library, history: settings.history, basemap: settings.basemap, awayKm: settings.awayKm, home: settings.home },
+        settings: { library: settings.library, history: settings.history, basemap: settings.basemap, awayKm: settings.awayKm, home: settings.home, nearby: settings.nearby },
         home: data?.homes.main ? { lat: data.homes.main.lat, lng: data.homes.main.lng, city: data.homes.main.city, cc: data.homes.main.cc } : null,
         trips: data?.trips.length ?? 0,
         people: data?.people.slice(0, 30).map((p) => p.name) ?? [],
@@ -662,6 +669,20 @@ export function apply(ctx, config) {
           s: pts.map((a) => Math.round((a.score ?? 0) * 100)),
           v: pts.map((a) => (a.video ? 1 : 0)),
           cc: pts.map((a) => a.place?.cc ?? ''),
+          // The city of each point, as an index into `cities`.
+          ...(() => {
+            const cities = [];
+            const index = new Map();
+            const ci = pts.map((a) => {
+              const name = a.place?.city || a.place?.province || a.place?.country || '';
+              if (!index.has(name)) {
+                index.set(name, cities.length);
+                cities.push(name);
+              }
+              return index.get(name);
+            });
+            return { cities, ci };
+          })(),
           unlocated: data.assets.length - pts.length,
         };
       }),
@@ -718,6 +739,57 @@ export function apply(ctx, config) {
         // `all`: every located match's id too, so the map can filter to them.
         const result = search(data, { ...q, limit: Math.min(60, Number(q.limit) || 40), withAll: q.all === true });
         return { ok: true, result, query: typed, label: describeQuery(q) };
+      }),
+    );
+
+    // Named places at street level (venues, landmarks), built once per index.
+    let placesCache = { data: null, list: [] };
+    route('exact', '/places', (req, res) =>
+      serveJson(res, async () => {
+        await atlas.ensure();
+        const data = atlas.data;
+        if (!data) return { ok: false, ...atlas.status() };
+        if (placesCache.data !== data) placesCache = { data, list: placesOf(data.assets, data.lexicon) };
+        return { ok: true, places: placesCache.list };
+      }),
+    );
+
+    // The best few of a set of photos, for the panel's "featured" row.
+    route('exact', '/curate', (req, res) =>
+      postJson(req, res, async (body) => {
+        await atlas.ensure();
+        const data = atlas.data;
+        if (!data) return { ok: false, ...atlas.status() };
+        const list = pick(data, (body.ids ?? []).slice(0, 20000));
+        const n = Math.max(1, Math.min(60, Number(body.n) || 18));
+        const good = list.filter((a) => (a.score ?? 0) > -0.2);
+        return { ok: true, best: pickBest(good.length >= Math.min(n, list.length) ? good : list, n).map((a) => a.id) };
+      }),
+    );
+
+    // Wikipedia articles near the map's centre (only when the panel asks, zoomed in).
+    const nearbyCache = new Map();
+    route('exact', '/nearby', (req, res) =>
+      serveJson(res, async () => {
+        if (!settings.nearby) return { ok: true, off: true, articles: [] };
+        const url = new URL(req.url ?? '/', 'http://localhost');
+        const lat = Number(url.searchParams.get('lat'));
+        const lng = Number(url.searchParams.get('lng'));
+        const r = Number(url.searchParams.get('r')) || 3000;
+        const l = url.searchParams.get('lang') === 'en' ? 'en' : 'zh';
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { ok: false, reason: 'lat and lng' };
+        const key = `${l}:${lat.toFixed(2)}:${lng.toFixed(2)}:${Math.round(Math.log2(Math.max(100, r)))}`;
+        if (!nearbyCache.has(key)) {
+          const p = nearbyArticles(lat, lng, r, l, { userAgent: `dsh-atlas/${VERSION} (DeepSeek Harness plugin)` });
+          nearbyCache.set(key, p);
+          p.catch(() => nearbyCache.delete(key));
+          while (nearbyCache.size > 300) nearbyCache.delete(nearbyCache.keys().next().value);
+        }
+        try {
+          return { ok: true, articles: await nearbyCache.get(key) };
+        } catch (error) {
+          return { ok: false, reason: String(error?.message ?? error), articles: [] };
+        }
       }),
     );
 
