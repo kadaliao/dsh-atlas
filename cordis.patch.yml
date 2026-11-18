@@ -1,0 +1,14 @@
+- insert:
+    - id: atlas
+      name: '@kadaliao/dsh-atlas'
+      config:
+        enabled: true
+        # A Photos library to read; empty finds the one Photos opens by default.
+        library: ''
+        # Fetch "on this day in history" from Wikipedia (only the date is sent).
+        history: true
+        # 'auto': OpenFreeMap street map tiles, with the bundled outline map
+        # when offline; 'offline': the bundled outline map only.
+        basemap: auto
+        # A photo further than this from home (km) counts as a trip.
+        awayKm: 100

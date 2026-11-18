@@ -1,0 +1,65 @@
+{
+  "name": "@kadaliao/dsh-atlas",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Your photo library on a globe: every place you took a photo lights up, thumbnails pop up where you were, trips are drawn as flight arcs you can replay as a story, and each day brings back what you shot on this date and what happened in the world near the places you have been. The model can search your photos and move the map.",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib/*.mjs",
+    "vendor/*",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-primitives",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-commands"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": ">=0.1.0-rc.6 <0.3.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kadaliao/dsh-atlas.git"
+  },
+  "homepage": "https://github.com/kadaliao/dsh-atlas",
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "dsh-plugin",
+    "photos",
+    "map",
+    "globe",
+    "travel",
+    "on-this-day",
+    "maplibre",
+    "tool"
+  ]
+}
