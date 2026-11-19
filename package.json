@@ -1,6 +1,6 @@
 {
   "name": "@kadaliao/dsh-atlas",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "Your photo library on a globe: every place you took a photo lights up, thumbnails pop up where you were, trips you can replay as a story, and each day brings back what you shot on this date and what happened in the world near the places you have been. The model can search your photos and move the map.",
   "exports": {
