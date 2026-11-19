@@ -135,6 +135,7 @@ test('search takes typed text and returns every match on request', { skip }, asy
   const r = (await call('/__dsh_atlas/search', { text: '乙国 海滩', all: true })).json;
   assert.equal(r.result.total, 5);
   assert.equal(r.result.all.length, 5);
+  assert.equal(r.result.matches.length, 5);
   assert.deepEqual(r.query, { place: '乙国', labels: ['海滩'] });
   assert.equal(r.label, '乙国 · 海滩');
 });

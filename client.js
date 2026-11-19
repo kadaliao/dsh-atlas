@@ -155,6 +155,9 @@ window.__ModuleLoader__.load({
         searching: 'Searching…',
         noMatch: 'Nothing matches “{q}”.',
         tryLabels: 'Try: {words}',
+        noneTogether: 'No photo is all of “{q}” at once.',
+        noPlace: 'None of these has a location, so the map stays as it is.',
+        searchFailed: 'Search did not go through. Try again in a moment.',
         resultCount: '{n} photos · {q}',
         selection: 'Selected',
         empty: 'No photos with a location yet.',
@@ -283,6 +286,9 @@ window.__ModuleLoader__.load({
         searching: '搜索中…',
         noMatch: '没有找到“{q}”。',
         tryLabels: '可以试试：{words}',
+        noneTogether: '没有同时符合“{q}”的照片。',
+        noPlace: '这些照片都没有位置信息，地图不变，照片在列表里。',
+        searchFailed: '搜索没成功，稍后再试一次。',
         resultCount: '{n} 张 · {q}',
         selection: '选中',
         empty: '还没有带地点的照片。',
@@ -2685,8 +2691,8 @@ window.__ModuleLoader__.load({
             postJson(`${ROUTE}/search`, { ...cmd.query, all: true }).then((b) => {
               if (!b?.ok || !alive.current || ticket !== commandSeq.current) return;
               const all = b.result.all ?? ids;
-              setFilter({ key: `cmd-${Date.now()}`, ids: all, label: b.label || label, total: b.result.total });
-              setSelection({ ids: all, title: b.label || label, subtitle: '', key: Date.now() });
+              if (all.length > 0) setFilter({ key: `cmd-${Date.now()}`, ids: all, label: b.label || label, total: all.length });
+              setSelection({ ids: b.result.matches ?? all, title: b.label || label, subtitle: '', key: Date.now() });
               setTab('photos');
             });
           } else if (ids.length) {
@@ -2794,19 +2800,33 @@ window.__ModuleLoader__.load({
         const ticket = (commandSeq.current += 1);
         postJson(`${ROUTE}/search`, { text: q, all: true, limit: 1 })
           .then((b) => {
-            if (!b?.ok || !alive.current || ticket !== commandSeq.current) return;
-            const r = b.result;
-            if (r.located === 0) {
-              setFilter(null);
-              const words = r.suggestions?.similar?.length ? r.suggestions.similar : r.suggestions?.common ?? [];
-              setSearchNote(`${t('noMatch', { q })}${words.length ? ` ${t('tryLabels', { words: words.slice(0, 8).join('、') })}` : ''}`);
+            if (!alive.current || ticket !== commandSeq.current) return;
+            if (!b?.ok) {
+              setSearchNote(b?.status === 'building' ? t('building') : t('searchFailed'));
               return;
             }
-            setFilter({ key: `q-${q}-${Date.now()}`, ids: r.all, label: b.label || q, total: r.located });
-            setSelection({ ids: r.all, title: b.label || q, subtitle: r.places.slice(0, 3).map((p) => p.name).join(' · '), key: Date.now() });
+            const r = b.result;
+            const label = b.label || q;
+            if (r.total === 0) {
+              setFilter(null);
+              const unknown = r.labels?.unmatched?.length > 0;
+              const words = r.suggestions?.similar?.length ? r.suggestions.similar : r.suggestions?.common ?? [];
+              setSearchNote(unknown ? `${t('noMatch', { q })}${words.length ? ` ${t('tryLabels', { words: words.slice(0, 8).join('、') })}` : ''}` : t('noneTogether', { q: label }));
+              return;
+            }
+            // The list shows every match; the map, the ones with a location.
+            const ids = r.matches ?? r.all;
+            if (r.located > 0) {
+              setFilter({ key: `q-${q}-${Date.now()}`, ids: r.all, label, total: r.located });
+              if (r.bbox) globeRef.current?.fitBounds(r.bbox, { maxZoom: 11 });
+            } else {
+              setFilter(null);
+              setSearchNote(t('noPlace'));
+            }
+            setSelection({ ids, title: label, subtitle: r.places.slice(0, 3).map((p) => p.name).join(' · '), key: Date.now() });
             setTab('photos');
-            if (r.bbox) globeRef.current?.fitBounds(r.bbox, { maxZoom: 11 });
           })
+          .catch(() => alive.current && ticket === commandSeq.current && setSearchNote(t('searchFailed')))
           .finally(() => alive.current && setSearching(false));
       };
 

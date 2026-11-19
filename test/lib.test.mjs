@@ -151,6 +151,62 @@ test('findTrips keeps defaults when options are undefined', () => {
   assert.equal(findTrips(sampleAssets(), { awayKm: 5000 }).trips.length, 0);
 });
 
+/** A life at home (10°N 100°E) every day of 2024, with away photos added by the test. */
+function lifeWith(away) {
+  const list = [];
+  let n = 0;
+  const add = (iso, lat, lng, place, extra = {}) => list.push({ id: `L${String(n++).padStart(5, '0')}`, t: at(iso), tz: 28800, lat, lng, video: false, fav: false, w: 1, h: 1, dur: 0, dir: '', file: '', score: 0.5, shot: false, moment: '', title: '', place: { ...place, home: false }, lex: [], ...extra });
+  const home = { cc: 'XA', country: '甲国', province: '', city: '甲城', district: '东区' };
+  for (let d = 0; d < 200; d += 1) add(`${new Date(Date.UTC(2024, 0, 1 + d)).toISOString().slice(0, 10)}T09:00:00`, 10, 100, home);
+  away(add, home);
+  return list;
+}
+const CITY_B = { cc: 'XA', country: '甲国', province: '乙省', city: '乙城', district: '' };
+
+test('findTrips: a few photos in an afternoon are a stopover, not a trip', () => {
+  const assets = lifeWith((add) => {
+    for (const h of [12, 13, 14]) add(`2024-03-10T${h}:00:00`, 20, 110, CITY_B);
+    // A proper visit: two days, five photos.
+    for (const d of ['2024-04-10T12:00:00', '2024-04-10T18:00:00', '2024-04-11T10:00:00', '2024-04-11T15:00:00', '2024-04-12T08:00:00']) add(d, 20, 110, CITY_B);
+  });
+  const { trips } = findTrips(assets);
+  assert.deepEqual(trips.map((t) => t.start), ['2024-04-10']);
+});
+
+test('findTrips keeps a stopover that is the only time in a country', () => {
+  const assets = lifeWith((add) => {
+    for (const h of [12, 13, 14]) add(`2024-03-10T${h}:00:00`, 64, -20, { cc: 'IS', country: '冰岛', province: '', city: 'Fosshóll', district: '' });
+  });
+  assert.equal(findTrips(assets).trips.length, 1);
+});
+
+test('findTrips: a moment back home (or a saved video from there) does not cut a trip in two', () => {
+  const assets = lifeWith((add, home) => {
+    for (const d of ['2024-05-01T12:00:00', '2024-05-02T12:00:00', '2024-05-03T12:00:00']) add(d, 20, 110, CITY_B);
+    // Someone else's video of home, saved from an app, the next night; then the trip goes on.
+    add('2024-05-04T04:00:00', 10, 100, home, { saved: true });
+    // And one photo at home that really is yours, only for a moment.
+    add('2024-05-04T05:00:00', 10, 100, home);
+    for (const d of ['2024-05-04T12:00:00', '2024-05-05T12:00:00']) add(d, 20, 110, CITY_B);
+  }).filter((a) => !(a.t >= at('2024-05-01T00:00:00') && a.t < at('2024-05-06T00:00:00') && a.place.city === '甲城' && a.t % 86400 === at('2024-01-01T09:00:00') % 86400));
+  const { trips } = findTrips(assets);
+  assert.equal(trips.length, 1);
+  assert.equal(trips[0].count, 5);
+});
+
+test('findTrips ignores photos saved from other apps', () => {
+  const assets = lifeWith((add) => {
+    for (const h of [8, 10, 12, 14, 16, 18, 20, 22]) add(`2024-03-10T${h}:00:00`, 20, 110, CITY_B, { saved: true });
+  });
+  assert.equal(findTrips(assets).trips.length, 0);
+});
+
+test('stopsOf names a stop in the home city by its district and folds a lone first photo', () => {
+  const p = (city, district, t) => ({ id: `${city}${t}`, t, tz: 0, lat: 1, lng: 1, place: { city, district, cc: 'XA', country: '甲国' }, score: 0 });
+  const stops = stopsOf([p('B', '', 1), p('甲城', '怀柔区', 2), p('甲城', '怀柔区', 3)], { homeCity: '甲城' });
+  assert.deepEqual(stops.map((s) => [s.name, s.count]), [['怀柔区', 3]]);
+});
+
 test('stopsOf folds a lone photo between stops into the one before', () => {
   const p = (city, t) => ({ id: `${city}${t}`, t, tz: 0, lat: 1, lng: 1, place: { city, cc: 'XB', country: '乙国' }, score: 0 });
   const stops = stopsOf([p('A', 1), p('A', 2), p('B', 3), p('C', 4), p('C', 5)]);
@@ -214,10 +270,25 @@ test('search filters by labels, place, dates, months and distance', () => {
   assert.equal(search(data, { labels: ['猫'], withAll: true }).all.length, 16);
 });
 
+test('search finds a word in place names and moments, and lists matches without a location', () => {
+  const assets = sampleAssets();
+  assets[0].moment = '夫子庙步行街';
+  const data = derive(assets, lexicon, {});
+  const r = search(data, { labels: ['夫子庙'] });
+  assert.equal(r.total, 1);
+  assert.equal(search(data, { labels: ['甲城'] }).total, search(data, { place: '甲城' }).total);
+  // The one photo with no location has label 2 (天空): the map gets the located ones, the list all.
+  const sky = search(data, { labels: ['天空'], withAll: true });
+  assert.equal(sky.matches.length, sky.total);
+  assert.equal(sky.all.length, sky.located);
+  assert.ok(sky.matches.length > sky.all.length);
+});
+
 test('parseText splits a typed query into place, dates and labels', () => {
   const data = derive(sampleAssets(), lexicon, {});
   assert.deepEqual(parseText(data, '乙城 2024 猫'), { place: '乙城', from: '2024', to: '2024', labels: ['猫'] });
   assert.deepEqual(parseText(data, '夏天 视频'), { kind: 'video', months: [6, 7, 8] });
+  assert.deepEqual(parseText(data, '去年的截图', new Date(2025, 5, 1)), { kind: 'screenshot', from: '2024', to: '2024' });
   assert.deepEqual(parseText(data, '小黑'), { people: ['小黑'] });
   assert.deepEqual(parseText(data, '2024-04'), { from: '2024-04', to: '2024-04' });
 });
@@ -230,8 +301,14 @@ test('parseText reads words that run together', () => {
   assert.deepEqual(parseText(data, '去年', new Date(2025, 5, 1)), { from: '2024', to: '2024' });
   assert.deepEqual(parseText(data, '乙城 丙城'), { place: ['乙城', '丙城'] });
   assert.deepEqual(parseText(data, '照片'), { kind: 'photo' });
-  // An unknown word keeps the one-character words it holds ("吃饭" → 吃).
-  assert.deepEqual(parseText(data, '猫粮店'), { labels: ['猫'] });
+  // An unknown word stays whole; the search falls back to its one-character words
+  // only when at most one character is unknown ("猫猫", "吃饭" → 吃, not "环球影城" → 球 + 城).
+  assert.deepEqual(parseText(data, '猫粮店'), { labels: ['猫粮店'] });
+  assert.deepEqual(parseText(data, '天猫影城'), { labels: ['天猫影城'] });
+  assert.equal(search(data, { labels: ['猫猫'] }).total, search(data, { labels: ['猫'] }).total);
+  assert.equal(search(data, { labels: ['猫粮'] }).total, search(data, { labels: ['猫'] }).total);
+  assert.equal(search(data, { labels: ['猫粮店'] }).total, 0);
+  assert.deepEqual(search(data, { labels: ['猫粮店'] }).labels.unmatched, ['猫粮店']);
   assert.equal(search(data, parseText(data, '乙城 丙城')).total, search(data, { place: '乙城' }).total + search(data, { place: '丙城' }).total);
 });
 

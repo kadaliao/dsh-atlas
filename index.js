@@ -242,7 +242,7 @@ const SEARCH_PARAMS = {
   nearLat: { type: 'number', description: 'With nearLng: only photos within nearKm of this point.' },
   nearLng: { type: 'number', description: 'See nearLat.' },
   nearKm: { type: 'number', description: 'Radius for nearLat/nearLng, km (default 5).' },
-  kind: { type: 'string', enum: ['photo', 'video'], description: 'Only photos or only videos.' },
+  kind: { type: 'string', enum: ['photo', 'video', 'screenshot'], description: 'Only photos, only videos, or only screenshots.' },
   favorites: { type: 'boolean', description: 'Only favourites.' },
   trip: { type: 'string', description: 'Only photos of this trip (an id from atlas_trips).' },
   sort: { type: 'string', enum: ['best', 'newest', 'oldest'], description: 'Order of the representative photos (default best: Photos\' own aesthetic score).' },
@@ -520,6 +520,7 @@ export function describeQuery(q) {
   if (Array.isArray(q.people) && q.people.length) parts.push(q.people.join(' · '));
   if (q.near) parts.push(`${q.near.km ?? 5} km`);
   if (q.kind === 'video') parts.push('video');
+  if (q.kind === 'screenshot') parts.push('screenshot');
   if (q.favorites) parts.push('♥');
   return parts.join(' · ');
 }
