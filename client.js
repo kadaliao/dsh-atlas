@@ -149,7 +149,6 @@ window.__ModuleLoader__.load({
         stopN: 'Stop {i} of {n}',
         homeLabel: 'Home',
         layers: 'Layers',
-        layerArcs: 'Flight arcs',
         layerNight: 'Night side',
         layerCountries: 'Visited countries',
         layerHistory: 'History markers',
@@ -278,7 +277,6 @@ window.__ModuleLoader__.load({
         stopN: '第 {i} 站 / 共 {n} 站',
         homeLabel: '家',
         layers: '图层',
-        layerArcs: '航线',
         layerNight: '夜幕',
         layerCountries: '去过的国家',
         layerHistory: '历史事件',
@@ -436,6 +434,9 @@ window.__ModuleLoader__.load({
 .atl-kb { animation: atl-kb 7s ease-out both; }
 @keyframes atl-kb { from { transform: scale(1.0) translate(0,0); } to { transform: scale(1.14) translate(-2%, -2%); } }
 .atl-fade { animation: atl-fade .5s ease both; }
+.atl-shot { animation: atl-shot .6s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes atl-shot { from { opacity: 0; transform: translateY(16px) scale(.94); } to { opacity: 1; transform: none; } }
+.atl-out { opacity: 0; transform: scale(.97); transition: opacity .3s ease, transform .3s ease; }
 @keyframes atl-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .atl-spin { width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.15); border-top-color: ${C.amber}; animation: atl-spin 1s linear infinite; }
 @keyframes atl-spin { to { transform: rotate(360deg); } }
@@ -593,6 +594,10 @@ window.__ModuleLoader__.load({
 
     /** Liberty, at night, with names in the UI language. */
     function nightStyle(style, lang) {
+      // Its shaded-relief raster (dozens of images just to show the globe) is all but black at night;
+      // the terrain's own hillshade takes over closer in.
+      style.layers = style.layers.filter((l) => l.type !== 'raster');
+      for (const [id, src] of Object.entries(style.sources)) if (src.type === 'raster') delete style.sources[id];
       const names = lang === 'zh' ? ['name:zh-Hans', 'name:zh', 'name:ja', 'name_int', 'name'] : ['name:en', 'name_int', 'name'];
       for (const layer of style.layers) {
         if (layer.type === 'symbol' && layer.layout && layer.layout['text-field'] !== undefined) {
@@ -605,7 +610,7 @@ window.__ModuleLoader__.load({
         }
         if (!layer.paint) continue;
         for (const [prop, v] of Object.entries(layer.paint)) if (/color$/.test(prop)) layer.paint[prop] = recolor(v, prop);
-        if (layer.type === 'background') layer.paint['background-color'] = '#0b1220';
+        if (layer.type === 'background') layer.paint['background-color'] = '#111a2c';
       }
       return style;
     }
@@ -653,6 +658,40 @@ window.__ModuleLoader__.load({
       });
     }
 
+    // The online style, kept in the browser so opening the panel does not wait for it.
+    const STYLE_KEY = 'atlas.style.v1';
+    const STYLE_MAX_AGE = 7 * 86400_000;
+    let styleFetch = null;
+    function fetchStyle() {
+      styleFetch ??= fetch(STYLE_URL, { signal: AbortSignal.timeout(8000) })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((style) => {
+          if (style && Array.isArray(style.layers)) {
+            try {
+              localStorage.setItem(STYLE_KEY, JSON.stringify({ at: Date.now(), style }));
+            } catch {
+              // Too big or no storage: fetched each time.
+            }
+            return style;
+          }
+          return null;
+        })
+        .catch(() => null)
+        .finally(() => {
+          styleFetch = null;
+        });
+      return styleFetch;
+    }
+    function storedStyle() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STYLE_KEY) || 'null');
+        if (saved?.style && Array.isArray(saved.style.layers)) return saved;
+      } catch {
+        // Nothing usable.
+      }
+      return null;
+    }
+
     /** The basemap: 'night' (OpenFreeMap liberty at night), 'amap', 'satellite' or 'offline'. */
     async function loadStyle(basemap, lang) {
       const mode = basemap === 'auto' || !basemap ? 'night' : basemap;
@@ -660,12 +699,12 @@ window.__ModuleLoader__.load({
       if (styleCache[key]) return JSON.parse(JSON.stringify(styleCache[key]));
       let style = null;
       if (mode !== 'offline') {
-        try {
-          const res = await fetch(STYLE_URL, { signal: AbortSignal.timeout(8000) });
-          if (res.ok) style = await res.json();
-        } catch {
-          style = null;
-        }
+        const saved = storedStyle();
+        if (saved) {
+          style = saved.style;
+          // Refreshed quietly for next time.
+          if (Date.now() - saved.at > STYLE_MAX_AGE) void fetchStyle();
+        } else style = await fetchStyle();
       }
       if (style && Array.isArray(style.layers)) {
         style = addBasemapLayers(nightStyle(style, lang), mode);
@@ -822,10 +861,9 @@ window.__ModuleLoader__.load({
         events: [],
         eventMarkers: [],
         homeMarker: null,
-        layers: { arcs: true, night: true, countries: true, history: true, terrain: true, places: true, nearby: true },
+        layers: { night: true, countries: true, history: true, terrain: true, places: true, nearby: true },
         cities: [],
         visited: [],
-        trips: [],
         activeTrip: null,
         progressAnim: 0,
         lastUser: Date.now(),
@@ -844,7 +882,7 @@ window.__ModuleLoader__.load({
 
       // What the custom layers show, kept so they can be rebuilt after a style switch.
       const empty = { type: 'FeatureCollection', features: [] };
-      const data = { pts: empty, arcs: empty, active: empty, visited: [], places: empty, wiki: empty };
+      const data = { pts: empty, active: empty, visited: [], places: empty, wiki: empty };
       // The style's own font, for the labels Atlas adds (none in the offline map).
       const fontOf = () => map.getStyle().layers.find((l) => l.type === 'symbol' && l.layout?.['text-font'])?.layout['text-font'] ?? null;
       const addLayers = () => {
@@ -866,9 +904,6 @@ window.__ModuleLoader__.load({
         map.addSource('atl-countries', { type: 'geojson', data: `${VENDOR}countries.json` });
         map.addLayer({ id: 'atl-visited', type: 'fill', source: 'atl-countries', filter: visited, paint: { 'fill-color': C.amber, 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.16, 4, 0.1, 6, 0] } }, before);
         map.addLayer({ id: 'atl-visited-line', type: 'line', source: 'atl-countries', filter: visited, paint: { 'line-color': C.amber, 'line-width': 1, 'line-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.55, 5, 0.25, 7, 0] } }, before);
-        map.addSource('atl-arcs', { type: 'geojson', data: data.arcs });
-        map.addLayer({ id: 'atl-arcs-glow', type: 'line', source: 'atl-arcs', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['case', ['get', 'abroad'], C.cyan, '#7fb4ff'], 'line-width': 5, 'line-blur': 5, 'line-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.22, 6, 0.08] } });
-        map.addLayer({ id: 'atl-arcs', type: 'line', source: 'atl-arcs', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['case', ['get', 'abroad'], C.cyan, '#7fb4ff'], 'line-width': ['interpolate', ['linear'], ['zoom'], 0, 0.9, 6, 1.6], 'line-opacity': ['interpolate', ['linear'], ['zoom'], 0, 0.5, 6, 0.25, 10, 0.12] } });
         map.addSource('atl-active', { type: 'geojson', lineMetrics: true, data: data.active });
         map.addLayer({ id: 'atl-active-glow', type: 'line', source: 'atl-active', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-width': 9, 'line-blur': 7, 'line-gradient': progressGradient(st.progress ?? 1, 0.55) } });
         map.addLayer({ id: 'atl-active', type: 'line', source: 'atl-active', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-width': 2.6, 'line-gradient': progressGradient(st.progress ?? 1, 1) } });
@@ -1151,23 +1186,29 @@ window.__ModuleLoader__.load({
       const applyLayers = () => {
         if (!st.ready) return;
         const vis = (on) => (on ? 'visible' : 'none');
-        // The story shows only its own route.
-        map.setLayoutProperty('atl-arcs', 'visibility', vis(st.layers.arcs && !st.quiet));
-        map.setLayoutProperty('atl-arcs-glow', 'visibility', vis(st.layers.arcs && !st.quiet));
         map.setLayoutProperty('atl-night', 'visibility', vis(st.layers.night));
         map.setLayoutProperty('atl-visited', 'visibility', vis(st.layers.countries));
         map.setLayoutProperty('atl-visited-line', 'visibility', vis(st.layers.countries));
         for (const m of st.eventMarkers) m.getElement().style.display = st.layers.history ? '' : 'none';
         for (const id of ['atl-places-dot', 'atl-places-label']) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis(st.layers.places && !st.quiet));
         for (const id of ['atl-wiki-dot', 'atl-wiki-label']) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis(st.layers.nearby && !st.quiet));
-        if (map.getSource('atl-dem')) {
-          try {
-            map.setTerrain(st.layers.terrain ? { source: 'atl-dem', exaggeration: 1.35 } : null);
-          } catch {
-            // No terrain on this engine.
-          }
+        applyTerrain();
+      };
+      // 3D terrain only close in: from afar it shows nothing and costs every frame.
+      let terrainOn = false;
+      const applyTerrain = () => {
+        if (!st.ready || !map.getSource('atl-dem')) return;
+        const z = map.getZoom();
+        const want = st.layers.terrain && (terrainOn ? z >= 7.5 : z >= 8);
+        if (want === terrainOn) return;
+        terrainOn = want;
+        try {
+          map.setTerrain(want ? { source: 'atl-dem', exaggeration: 1.35 } : null);
+        } catch {
+          // No terrain on this engine.
         }
       };
+      map.on('zoomend', applyTerrain);
 
       const fitPadding = () => {
         const w = el.clientWidth;
@@ -1219,14 +1260,6 @@ window.__ModuleLoader__.load({
             map.setFilter('atl-visited', f);
             map.setFilter('atl-visited-line', f);
           });
-        },
-        setTrips(trips) {
-          st.trips = trips;
-          data.arcs = {
-            type: 'FeatureCollection',
-            features: trips.filter((t) => Array.isArray(t.path) && t.path.length > 1).map((t) => ({ type: 'Feature', properties: { id: t.id, abroad: t.abroad === true }, geometry: { type: 'LineString', coordinates: Pp(t.path) } })),
-          };
-          whenReady(() => setData('atl-arcs', data.arcs));
         },
         /** Draw one trip's route, filled in up to `progress` (0–1). */
         setActiveTrip(trip, progress = 1) {
@@ -1327,6 +1360,22 @@ window.__ModuleLoader__.load({
           } catch {
             map.flyTo({ center: [(w + e) / 2, (s + n) / 2], zoom: 4, duration, essential: true });
           }
+        },
+        /** Fly to frame a box (GPS), tilted and turned, at most `maxDuration` ms. */
+        frame(bbox, { maxZoom = 10, minZoom = 0, pitch = 0, bearing = 0, padding = fitPadding(), maxDuration = 3000 } = {}) {
+          if (!Array.isArray(bbox) || bbox.length !== 4) return;
+          st.lastUser = Date.now();
+          const [w, s] = P(bbox[0], bbox[1]);
+          const [e, n] = P(bbox[2], bbox[3]);
+          let cam = null;
+          try {
+            cam = map.cameraForBounds([[w, s], [e, n]], { padding, maxZoom });
+          } catch {
+            cam = null;
+          }
+          const center = cam?.center ?? [(w + e) / 2, (s + n) / 2];
+          const zoom = Math.max(minZoom, Math.min(maxZoom, cam?.zoom ?? maxZoom));
+          map.flyTo({ center, zoom, pitch, bearing, curve: 1.5, speed: 1.1, maxDuration, essential: true });
         },
         /** Fly the camera; `center` is GPS, shifted here when the basemap needs it. */
         flyTo(opts) {
@@ -2045,6 +2094,210 @@ window.__ModuleLoader__.load({
       );
     }
 
+    // --- replay the years ------------------------------------------------------------
+
+    /**
+     * The chapters of "replay the years", oldest first: every trip, and in each
+     * year the cities you photographed most outside trips. The biggest few are
+     * kept, at least one a year.
+     */
+    function replayScenes(points, trips, cities, max = 28) {
+      const sorted = [...points].sort((a, b) => a.t - b.t);
+      const windows = [...trips].filter((x) => Number.isFinite(x.from) && Number.isFinite(x.to)).sort((a, b) => a.from - b.from);
+      const scenes = new Map();
+      let w = 0;
+      for (const p of sorted) {
+        while (w < windows.length && windows[w].to < p.t) w += 1;
+        const trip = w < windows.length && windows[w].from <= p.t ? windows[w] : null;
+        const key = trip ? `trip:${trip.id}` : `city:${p.y}:${p.ci ?? -1}`;
+        let s = scenes.get(key);
+        if (!s) {
+          s = trip
+            ? { key, trip: true, abroad: trip.abroad === true, title: [...new Set(trip.places.map(shortPlace))].slice(0, 3).join(' · '), flags: (trip.countries ?? []).filter((c) => c.cc !== trip.home?.cc).map((c) => flagOf(c.cc)).join(' '), pts: [] }
+            : { key, trip: false, title: shortPlace(cities[p.ci] || ''), flags: '', pts: [] };
+          scenes.set(key, s);
+        }
+        s.pts.push(p);
+      }
+      // A trip abroad is a chapter even with a handful of photos.
+      let list = [...scenes.values()].filter((s) => s.pts.length >= (s.abroad ? 3 : s.trip ? 6 : 15) && s.title);
+      for (const s of list) {
+        s.weight = s.pts.length * (s.abroad ? 4 : s.trip ? 2 : 1);
+        s.year = s.pts[Math.floor(s.pts.length / 2)].y;
+      }
+      if (list.length > max) {
+        // The year's biggest first, then the biggest of the rest.
+        const keep = new Set();
+        const byYear = new Map();
+        for (const s of list) if (!byYear.has(s.year) || byYear.get(s.year).weight < s.weight) byYear.set(s.year, s);
+        for (const s of byYear.values()) keep.add(s);
+        for (const s of [...list].sort((a, b) => b.weight - a.weight)) {
+          if (keep.size >= max) break;
+          keep.add(s);
+        }
+        list = list.filter((s) => keep.has(s));
+      }
+      return list
+        .map((s) => {
+          const pts = s.pts;
+          const mid = pts[Math.floor(pts.length / 2)];
+          // The box around most of them: a stray photo should not pull the camera out.
+          const trim = (vals) => {
+            const v = [...vals].sort((a, b) => a - b);
+            const cut = v.length >= 20 ? Math.floor(v.length * 0.05) : 0;
+            return [v[cut], v[v.length - 1 - cut]];
+          };
+          const [s0, n0] = trim(pts.map((p) => p.lat));
+          const [w0, e0] = trim(pts.map((p) => p.lng));
+          const first = pts[0];
+          const last = pts[pts.length - 1];
+          return {
+            key: s.key,
+            trip: s.trip,
+            abroad: s.abroad,
+            title: s.title,
+            flags: s.flags,
+            year: s.year,
+            at: s.trip ? first.t : mid.t,
+            // Where the footprint has grown to once this chapter is shown.
+            until: s.trip ? last : mid,
+            from: localDay(first.t, first.tz),
+            to: localDay(last.t, last.tz),
+            count: pts.length,
+            ids: pts.map((p) => p.id),
+            bbox: [w0, s0, e0, n0],
+          };
+        })
+        .sort((a, b) => a.at - b.at);
+    }
+
+    /** A place's everyday name: 贵阳市 → 贵阳, 黔东南苗族侗族自治州 → 黔东南, 香港特别行政区 → 香港. */
+    function shortPlace(name) {
+      const n = String(name ?? '').trim();
+      const m = n.match(/^(.{2,}?)(?:(?:苗|侗|布依|土家|彝|藏|傣|白|哈尼|壮|回|蒙古|朝鲜|羌|景颇|傈僳|哈萨克|柯尔克孜|维吾尔|黎|瑶|纳西|水|仡佬|畲)族)+自治(?:州|县|旗)$/);
+      if (m) return m[1];
+      const s = n.replace(/(特别行政区|特别市|广域市|地区|市)$/, '');
+      return s.length >= 2 ? s : n;
+    }
+
+    /** The best few photos of a chapter, fetched once and preloaded. */
+    const sceneShots = new Map();
+    function shotsOf(scene) {
+      if (!sceneShots.has(scene.key)) {
+        const p = postJson(`${ROUTE}/curate`, { ids: scene.ids, n: 3 })
+          .then((b) => (b?.ok ? b.best.slice(0, 3) : scene.ids.slice(0, 3)))
+          .then((ids) =>
+            Promise.all(
+              ids.map(
+                (id) =>
+                  new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => resolve(id);
+                    img.onerror = () => resolve(null);
+                    img.src = largeUrl(id);
+                  }),
+              ),
+            ).then((ok) => ok.filter(Boolean)),
+          )
+          .catch(() => []);
+        sceneShots.set(scene.key, p);
+        while (sceneShots.size > 200) sceneShots.delete(sceneShots.keys().next().value);
+      }
+      return sceneShots.get(scene.key);
+    }
+
+    function Replay(props) {
+      const t = props.t;
+      const { scenes, globe, narrow } = props;
+      const [i, setI] = useState(-1);
+      const [shots, setShots] = useState(null);
+      const [leaving, setLeaving] = useState(false);
+      const done = useRef(props.onDone);
+      done.current = props.onDone;
+      const grow = useRef(props.onGrow);
+      grow.current = props.onGrow;
+      useEffect(() => {
+        globe.freeze(true);
+        globe.setMarkersVisible(false);
+        const b = scenes[0]?.bbox;
+        globe.flyTo({ center: b ? [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2] : [105, 30], zoom: 2.2, pitch: 0, bearing: 0, duration: 1600 });
+        if (scenes[0]) void shotsOf(scenes[0]);
+        const timer = setTimeout(() => setI(0), 1500);
+        return () => {
+          clearTimeout(timer);
+          globe.freeze(false);
+          globe.setMarkersVisible(true);
+        };
+      }, []);
+      useEffect(() => {
+        if (i < 0) return undefined;
+        if (i >= scenes.length) {
+          done.current?.(true);
+          return undefined;
+        }
+        let alive = true;
+        const timers = [];
+        const later = (fn, ms) => timers.push(setTimeout(() => alive && fn(), ms));
+        const scene = scenes[i];
+        const next = scenes[i + 1];
+        setLeaving(true);
+        later(() => {
+          setShots(null);
+          setLeaving(false);
+        }, 320);
+        // Close in on a city; a trip is framed whole.
+        const right = narrow ? 30 : Math.min(560, Math.round(window.innerWidth * 0.42));
+        globe.frame(scene.bbox, { maxZoom: scene.trip ? 8.5 : 10, minZoom: 3.5, pitch: scene.trip ? 20 : 38, bearing: ((i * 23) % 40) - 20, padding: { top: 110, bottom: 200, left: 60, right } });
+        grow.current?.(scene.until);
+        const started = performance.now();
+        Promise.all([globe.settle(), shotsOf(scene)]).then(([, ids]) => {
+          if (!alive) return;
+          if (next) void shotsOf(next);
+          // Photos come in as the camera lands, not before the old ones have gone.
+          later(() => setShots(ids), Math.max(0, 420 - (performance.now() - started)));
+          later(() => setI((k) => k + 1), Math.max(0, 420 - (performance.now() - started)) + (scene.trip ? 3600 : 3000));
+        });
+        return () => {
+          alive = false;
+          for (const x of timers) clearTimeout(x);
+        };
+      }, [i]);
+      const scene = i >= 0 && i < scenes.length ? scenes[i] : null;
+      const list = shots ?? [];
+      return h(
+        'div',
+        { style: { position: 'absolute', inset: 0, zIndex: 40, pointerEvents: 'none' } },
+        h('div', { style: { position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.5) 100%)' } }),
+        scene
+          ? h(
+              'div',
+              { key: `cap-${i}`, className: 'atl-fade', style: { position: 'absolute', left: 28, bottom: 150, maxWidth: narrow ? 'calc(100% - 56px)' : 480 } },
+              h('div', { style: { fontSize: 64, fontWeight: 800, lineHeight: 1, letterSpacing: -1, color: C.amber, fontVariantNumeric: 'tabular-nums', textShadow: '0 6px 30px rgba(0,0,0,.6)' } }, String(scene.year)),
+              h('div', { style: { fontSize: 30, fontWeight: 750, lineHeight: 1.2, marginTop: 8, textShadow: '0 4px 24px rgba(0,0,0,.6)' } }, `${scene.flags ? `${scene.flags} ` : ''}${scene.title}`),
+              h('div', { style: { color: C.muted, marginTop: 6, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 } }, scene.trip ? Icon.plane(14) : null, `${dateRange(scene.from, scene.to)} · ${t('photos', { n: fmtNum(scene.count) })}`),
+            )
+          : null,
+        !narrow && list.length
+          ? h(
+              'div',
+              { key: `ph-${i}`, className: leaving ? 'atl-out' : '', style: { position: 'absolute', right: 28, top: 80, bottom: 150, width: 'min(40%, 500px)', display: 'grid', gridTemplateColumns: list.length > 1 ? '1fr 1fr' : '1fr', gridTemplateRows: list.length > 2 ? '1.4fr 1fr' : '1fr', gap: 10 } },
+              list.map((id, k) =>
+                h(
+                  'div',
+                  { key: id, className: 'atl-shot', style: { animationDelay: `${k * 0.14}s`, gridColumn: list.length === 3 && k === 0 ? 'span 2' : undefined, borderRadius: 14, overflow: 'hidden', boxShadow: '0 18px 44px rgba(0,0,0,.55)', border: '2px solid rgba(255,255,255,.85)', background: '#111' } },
+                  h('img', { className: 'atl-kb', src: largeUrl(id), alt: '', style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' } }),
+                ),
+              ),
+            )
+          : null,
+        h(
+          'div',
+          { style: { position: 'absolute', top: 18, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 4, maxWidth: '70%', flexWrap: 'wrap', justifyContent: 'center' } },
+          scenes.map((s, k) => h('div', { key: s.key, style: { width: k === i ? 18 : 6, height: 6, borderRadius: 3, background: k <= i ? (s.trip ? C.cyan : C.amber) : 'rgba(255,255,255,.22)', transition: 'all .3s' } })),
+        ),
+      );
+    }
+
     // --- settings ---------------------------------------------------------------------
 
     function SettingsSheet(props) {
@@ -2192,7 +2445,7 @@ window.__ModuleLoader__.load({
       const [settingsOpen, setSettingsOpen] = useState(false);
       const [layersOpen, setLayersOpen] = useState(false);
       const [layers, setLayers] = useState(() => {
-        const base = { arcs: true, night: true, countries: true, history: true, terrain: true, places: true, nearby: true };
+        const base = { night: true, countries: true, history: true, terrain: true, places: true, nearby: true };
         try {
           return { ...base, ...JSON.parse(localStorage.getItem('atlas.layers') || '{}') };
         } catch {
@@ -2213,6 +2466,9 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         alive.current = true;
         ensureCss();
+        // The map engine and the basemap load while the index is still being read.
+        ensureLibs().catch(() => {});
+        if (!storedStyle()) void fetchStyle();
         let timer = 0;
         const poll = () =>
           getJson(`${ROUTE}/state`)
@@ -2367,11 +2623,6 @@ window.__ModuleLoader__.load({
       }, [mapReady, places]);
       useEffect(() => {
         const g = globeRef.current;
-        if (!g || !mapReady) return;
-        g.setTrips(trips);
-      }, [mapReady, trips]);
-      useEffect(() => {
-        const g = globeRef.current;
         if (!g || !mapReady || !points) return;
         g.setVisited([...new Set(points.map((p) => p.cc).filter(Boolean))]);
       }, [mapReady, points]);
@@ -2395,23 +2646,17 @@ window.__ModuleLoader__.load({
         g.setActiveTrip(trip ?? null, 1);
       }, [mapReady, activeTrip, story]);
 
-      // Replay the years: the footprint grows month by month.
-      useEffect(() => {
-        if (!playing || timeline.bins.length === 0) return undefined;
-        let end = range && range[1] < timeline.bins.length - 1 ? range[1] : 0;
-        const startAt = 0;
-        globeRef.current?.overview();
-        const timer = setInterval(() => {
-          end += Math.max(1, Math.round(timeline.bins.length / 120));
-          if (end >= timeline.bins.length - 1) {
-            setRange(null);
-            setPlaying(false);
-            return;
-          }
-          setRange([startAt, end]);
-        }, 160);
-        return () => clearInterval(timer);
-      }, [playing]);
+      // Replay the years: chapter by chapter, the footprint growing behind it.
+      const scenesRef = useRef({ key: null, list: [] });
+      const replayScenesNow = () => {
+        if (scenesRef.current.key !== points) scenesRef.current = { key: points, list: replayScenes(points ?? [], trips, citiesRef.current) };
+        return scenesRef.current.list;
+      };
+      const stopReplay = (finished) => {
+        setPlaying(false);
+        setRange(null);
+        if (finished) globeRef.current?.overview();
+      };
 
       // Commands from the tools and the chat cards.
       const runCommand = (cmd) => {
@@ -2557,8 +2802,8 @@ window.__ModuleLoader__.load({
               setSearchNote(`${t('noMatch', { q })}${words.length ? ` ${t('tryLabels', { words: words.slice(0, 8).join('、') })}` : ''}`);
               return;
             }
-            setFilter({ key: `q-${q}-${Date.now()}`, ids: r.all, label: q, total: r.located });
-            setSelection({ ids: r.all, title: q, subtitle: r.places.slice(0, 3).map((p) => p.name).join(' · '), key: Date.now() });
+            setFilter({ key: `q-${q}-${Date.now()}`, ids: r.all, label: b.label || q, total: r.located });
+            setSelection({ ids: r.all, title: b.label || q, subtitle: r.places.slice(0, 3).map((p) => p.name).join(' · '), key: Date.now() });
             setTab('photos');
             if (r.bbox) globeRef.current?.fitBounds(r.bbox, { maxZoom: 11 });
           })
@@ -2648,7 +2893,6 @@ window.__ModuleLoader__.load({
               ['places', t('layerPlaces')],
               ['nearby', t('layerNearby')],
               ['terrain', t('layerTerrain')],
-              ['arcs', t('layerArcs')],
               ['countries', t('layerCountries')],
               ['night', t('layerNight')],
               ['history', t('layerHistory')],
@@ -2709,10 +2953,10 @@ window.__ModuleLoader__.load({
         h('div', { className: 'atl-stars', style: { backgroundImage: stars() ? `url(${stars()})` : undefined } }),
         // Inline: MapLibre's own class sets `position: relative` on its container.
         h('div', { ref: mapRef, className: 'atl-map', style: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 } }),
-        ready && mapReady && !story ? topBar : null,
-        ready && mapReady && !story && searchNote ? h('div', { className: 'atl-glass atl-fade', style: { position: 'absolute', top: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 21, padding: '8px 14px', maxWidth: 520, color: C.muted, fontSize: 12.5 } }, searchNote) : null,
-        ready && mapReady && !story && !drawerOpen && !settingsOpen ? h(TodayCard, { t, today, narrow, onMemory: showMemory, onEvent: showEvent }) : null,
-        ready && mapReady && !story && !(narrow && drawerOpen) ? h(Timeline, { t, bins: timeline.bins, focus: focusRef.current.bins, range, playing, extra: filter, shown: shown.current.list.length, onPlay: () => setPlaying(!playing), onRange: (r) => (setPlaying(false), setRange(r), r === null && setFilter(null)) }) : null,
+        ready && mapReady && !story && !playing ? topBar : null,
+        ready && mapReady && !story && !playing && searchNote ? h('div', { className: 'atl-glass atl-fade', style: { position: 'absolute', top: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 21, padding: '8px 14px', maxWidth: 520, color: C.muted, fontSize: 12.5 } }, searchNote) : null,
+        ready && mapReady && !story && !playing && !drawerOpen && !settingsOpen ? h(TodayCard, { t, today, narrow, onMemory: showMemory, onEvent: showEvent }) : null,
+        ready && mapReady && !story && !(narrow && drawerOpen) ? h(Timeline, { t, bins: timeline.bins, focus: focusRef.current.bins, range, playing, extra: filter, shown: shown.current.list.length, onPlay: () => (playing ? stopReplay(false) : (setTab(null), setStory(null), setRange([0, 0]), setPlaying(true))), onRange: (r) => (setPlaying(false), setRange(r), r === null && setFilter(null)) }) : null,
         ready && mapReady ? drawer : null,
         ready && mapReady && layersOpen && !story ? layersMenu : null,
         ready && mapReady && settingsOpen && !story
@@ -2733,6 +2977,21 @@ window.__ModuleLoader__.load({
                   setReload((r) => r + 1);
                 } else getJson(`${ROUTE}/trips`).then((b) => b?.ok && setTrips(b.trips));
               },
+            })
+          : null,
+        playing && mapReady && !story && globeRef.current
+          ? h(Replay, {
+              t,
+              narrow,
+              globe: globeRef.current,
+              scenes: replayScenesNow(),
+              onGrow: (p) => {
+                const n = timeline.bins.length;
+                if (!n) return;
+                const k = Math.max(0, Math.min(n - 1, (p.y - timeline.first) * 12 + p.m));
+                setRange([0, k]);
+              },
+              onDone: (finished) => stopReplay(finished),
             })
           : null,
         story && mapReady ? h(Story, { t, trip: story, globe: globeRef.current, onExit: () => setStory(null) }) : null,

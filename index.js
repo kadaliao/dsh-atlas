@@ -167,7 +167,6 @@ export function renderText(name, value) {
         places ? `Places: ${places}.` : '',
         `By year: ${years}.`,
         Object.keys(r.labels.matched).length ? `Labels matched: ${Object.entries(r.labels.matched).map(([k, v]) => `${k} → ${v.join('/')}`).join('; ')}.` : '',
-        r.labels.unmatched.length ? `Not found in the library (ignored): ${r.labels.unmatched.join(', ')}.${r.suggestions ? ` Close labels: ${r.suggestions.similar.join(', ')}.` : ''}` : '',
         `Representative photos (best first):`,
         ...value.photos.map((line) => `- ${line}`),
         value.shown ? 'The Atlas map now highlights these results; the user sees them there and in the card below. Call atlas_look with ids to see a few photos yourself.' : '',
@@ -513,7 +512,7 @@ export function buildTools(host) {
 /** A short human label of a query, for cards. */
 export function describeQuery(q) {
   const parts = [];
-  if (q.place) parts.push(q.place);
+  if (q.place) parts.push(Array.isArray(q.place) ? q.place.join(' / ') : q.place);
   if (q.country) parts.push(q.country);
   if (q.from || q.to) parts.push(q.from && q.to && q.from !== q.to ? `${q.from} – ${q.to}` : q.from || `≤ ${q.to}`);
   if (Array.isArray(q.months) && q.months.length) parts.push(`${q.months.join('/')}月`);

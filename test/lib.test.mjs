@@ -208,7 +208,7 @@ test('search filters by labels, place, dates, months and distance', () => {
   assert.equal(search(data, { months: [4], located: true, from: '2024' }).total, 16);
   assert.equal(search(data, { near: { lat: 21, lng: 111.5, km: 5 } }).total, 2);
   const none = search(data, { labels: ['恐龙'] });
-  assert.equal(none.total, sampleAssets().length, 'an unknown label is ignored');
+  assert.equal(none.total, 0, 'an unknown label matches nothing, not everything');
   assert.deepEqual(none.labels.unmatched, ['恐龙']);
   assert.ok(none.suggestions.common.includes('猫'));
   assert.equal(search(data, { labels: ['猫'], withAll: true }).all.length, 16);
@@ -220,6 +220,19 @@ test('parseText splits a typed query into place, dates and labels', () => {
   assert.deepEqual(parseText(data, '夏天 视频'), { kind: 'video', months: [6, 7, 8] });
   assert.deepEqual(parseText(data, '小黑'), { people: ['小黑'] });
   assert.deepEqual(parseText(data, '2024-04'), { from: '2024-04', to: '2024-04' });
+});
+
+test('parseText reads words that run together', () => {
+  const data = derive(sampleAssets(), lexicon, {});
+  assert.deepEqual(parseText(data, '乙城的猫'), { place: '乙城', labels: ['猫'] });
+  assert.deepEqual(parseText(data, '2024年夏天在乙城拍的照片'), { from: '2024', to: '2024', place: '乙城', months: [6, 7, 8] });
+  assert.deepEqual(parseText(data, '2023-2024'), { from: '2023', to: '2024' });
+  assert.deepEqual(parseText(data, '去年', new Date(2025, 5, 1)), { from: '2024', to: '2024' });
+  assert.deepEqual(parseText(data, '乙城 丙城'), { place: ['乙城', '丙城'] });
+  assert.deepEqual(parseText(data, '照片'), { kind: 'photo' });
+  // An unknown word keeps the one-character words it holds ("吃饭" → 吃).
+  assert.deepEqual(parseText(data, '猫粮店'), { labels: ['猫'] });
+  assert.equal(search(data, parseText(data, '乙城 丙城')).total, search(data, { place: '乙城' }).total + search(data, { place: '丙城' }).total);
 });
 
 // --- today ------------------------------------------------------------------------

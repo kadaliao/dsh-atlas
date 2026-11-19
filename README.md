@@ -17,15 +17,17 @@ Your photo library on a globe, inside [DeepSeek Harness](https://github.com/deep
   near-duplicates and bursts skipped, spread over the days; screenshots, documents and saved images
   kept out. Everything else follows, by time, one click away.
 - **Your trips, found for you.** Runs of photos taken far from home become trips, with their stops,
-  dates and distance, drawn as flight arcs. Pick one to see its route; press **Story** and the camera
+  dates and distance. Pick one to see its route; press **Story** and the camera
   flies stop by stop while that stop's best photos drift across the screen.
 - **A timeline of your years.** Drag across it to see one stretch of time, click a year, or press
-  **Replay the years** and watch your footprint grow month by month.
+  **Replay the years**: the camera flies from chapter to chapter — every trip, and the cities of each
+  year — showing each one's best photos while your footprint grows behind it.
 - **On this day, twice.** What you photographed on this date in earlier years — and what happened in
   the world on this date (from Wikipedia), the events near places you have been first: *"1987: the
   first mobile network opened in Guangzhou — 1 km from where you took photos."*
-- **Search like you talk.** Type `Kyoto 2023 cat`, `beach video`, `summer` in the panel; the map
-  filters to the matches. In any conversation, ask the model — *"Did I photograph cats in Japan? Show
+- **Search like you talk.** Type `Kyoto 2023 cat`, `beach video`, `summer` in the panel — or, in
+  Chinese, run the words together: `北京的猫`, `2023年夏天在珠海`, `去年`. The map filters to the
+  matches; a word your library has no photos of finds nothing and suggests words it does have. In any conversation, ask the model — *"Did I photograph cats in Japan? Show
   me on the map"*, *"Recap my April trip as a story"*, *"How many countries have I been to?"* — and
   the map moves as it answers.
 - **Footprint numbers.** Countries and regions, cities, days in each, trips, kilometres, a year-by-year
@@ -96,7 +98,7 @@ The gear button in the panel:
   centre if that guess is wrong.
 - **A trip starts this far from home** — 100 km by default.
 - **Map** — Night, Amap, Satellite or Outline (also in the layers menu, with the layers themselves:
-  places, Wikipedia nearby, 3D terrain, flight arcs, countries, night side, history markers).
+  places, Wikipedia nearby, 3D terrain, countries, night side, history markers).
 - **History on this day** — on or off.
 - **Read the library again** — Atlas also re-reads it by itself a few minutes after Photos changes.
 
