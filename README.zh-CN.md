@@ -47,7 +47,7 @@ https://raw.githubusercontent.com/kadaliao/dsh-plugins/main/marketplace.json
 
 ## 读了什么，什么会离开你的 Mac
 
-- **照片图库，只读。** 足迹以只读方式打开 `database/Photos.sqlite` 和搜索索引 `database/search/leo.sqlite`，
+- **照片图库，只读。** 足迹以只读方式打开 `database/Photos.sqlite` 和搜索索引 `database/search/leo.sqlite`（macOS 26 及更早是 `psi.sqlite`），
   把"照片"已经生成好的预览图（`resources/derivatives`）提供给面板。它从不写入图库。隐藏和已删除的照片不会出现。
 - **索引**（日期、坐标、地名、标签）缓存在 `~/.dsh/cache/atlas/`。不往你的对话里写任何东西。
 - **地图瓦片**：和所有网页地图一样，瓦片服务器能看到你在看哪个区域。*夜景* 用 [OpenFreeMap](https://openfreemap.org)；
@@ -55,6 +55,9 @@ https://raw.githubusercontent.com/kadaliao/dsh-plugins/main/marketplace.json
   选 *轮廓* 就什么都不联网。
 - **附近百科**：放大后，面板会向维基百科查询地图中心附近的条目，会发送这个位置。可以在图层菜单或设置里关掉。
 - **历史上的今天** 会向维基百科请求今天日期的历史事件，只发送日期。可以在设置里关掉。
+- **地名中英互通**：照片里的每个省、市、区，足迹会向[维基数据](https://www.wikidata.org)查一次另一种语言的名字，
+  这样搜 `北京` 和 `Beijing` 都能找到同样的照片。只发送这些地名，不发送照片的位置（同名的地方指哪一个，在你的 Mac 上判断）。
+  查到的结果存在缓存里。可以在设置里关掉。
 - **模型** 能看到它调用的工具返回的内容：数量、日期、地名、照片 id 和标签。只有它调用 `atlas_look` 时
   才会看到照片本身（每次最多 4 张预览图），这些图会像其他图片一样发给你的模型供应商。
 
@@ -71,7 +74,8 @@ https://raw.githubusercontent.com/kadaliao/dsh-plugins/main/marketplace.json
 
 标签就是"照片"App 自己做搜索用的词。"照片"只按 Mac 的系统语言存这些词，Atlas 会从 macOS 自带的
 "照片"翻译表里补上中文和英文名，所以不论系统是中文还是英文，`猫` 和 `cat`、`海滩` 和 `beach`
-都能找到同样的照片。地名和人名保持原样。匹配不上的词会返回相近的建议。
+都能找到同样的照片。省、市、区也有中英两种名字（来自维基数据，见上文）；街道、店名和人名保持"照片"里的样子。
+匹配不上的词会返回相近的建议。
 
 ## 设置
 
@@ -82,9 +86,10 @@ https://raw.githubusercontent.com/kadaliao/dsh-plugins/main/marketplace.json
 - **离家多远算旅行**：默认 100 公里。
 - **底图**：夜景、高德、卫星或轮廓（图层菜单里也能切换，还有各个图层的开关：我去过的地方、附近百科、3D 地形、去过的国家、夜幕、历史事件）。
 - **历史上的今天**：开或关。
+- **地名中英互通**：开或关。
 - **重新读取图库**："照片"有变化后，足迹也会在几分钟内自己重新读取。
 
-同样的选项也可以写在 `cordis.patch.yml` 里插件那一行：`library`、`history`、`nearby`、`basemap`（`night` | `amap` | `satellite` | `offline`）、`awayKm`。
+同样的选项也可以写在 `cordis.patch.yml` 里插件那一行：`library`、`history`、`nearby`、`basemap`（`night` | `amap` | `satellite` | `offline`）、`awayKm`、`placeNames`。
 
 ## 限制
 

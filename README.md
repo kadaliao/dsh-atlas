@@ -61,7 +61,7 @@ the page once after installing; **Atlas** appears in the left sidebar (or type `
 ## What it reads, and what leaves your Mac
 
 - **Your Photos library, read-only.** Atlas opens `database/Photos.sqlite` and the search index
-  `database/search/leo.sqlite` read-only, and serves the previews Photos already made
+  (`database/search/leo.sqlite`, or `psi.sqlite` on macOS 26 and earlier) read-only, and serves the previews Photos already made
   (`resources/derivatives`) to the panel. It never writes to the library. Hidden and deleted photos
   are left out.
 - **An index** of what it read (dates, coordinates, place names, labels) is cached under
@@ -73,6 +73,11 @@ the page once after installing; **Atlas** appears in the left sidebar (or type `
 - **Wikipedia nearby**: zoomed in, the panel asks Wikipedia for articles around the centre of the
   map, which sends that point. Turn it off in the layers menu or settings.
 - **History on this day** asks Wikipedia for the events of today's date — only the date is sent.
+- **Place names in Chinese and English**: once per province, city and district in your photos, Atlas
+  asks [Wikidata](https://www.wikidata.org) for its name in the other language, so `北京` and
+  `Beijing` find the same photos. Only those names are sent, not where the photos are (which of the
+  places of that name is meant is worked out on your Mac). The answers are kept in the cache. Turn it
+  off in settings.
   It can be turned off in settings.
 - **The model** sees what its tools return: counts, dates, place names, photo ids and labels. It sees
   a photo itself only when it calls `atlas_look` (at most 4 previews per call), which is sent to your
@@ -91,8 +96,9 @@ the page once after installing; **Atlas** appears in the left sidebar (or type `
 
 Labels are the words Photos itself uses for search. Photos keeps them in the language of your Mac;
 Atlas adds their Chinese and English names from the translations macOS ships with Photos, so `猫` and
-`cat`, `海滩` and `beach` find the same photos on either system. Place and people names stay as they
-are. A word that matches nothing comes back with suggestions.
+`cat`, `海滩` and `beach` find the same photos on either system. Provinces, cities and districts are
+named in both languages too (from Wikidata, see above); streets, venues and people stay as Photos
+has them. A word that matches nothing comes back with suggestions.
 
 ## Settings
 
@@ -105,10 +111,11 @@ The gear button in the panel:
 - **Map** — Night, Amap, Satellite or Outline (also in the layers menu, with the layers themselves:
   places, Wikipedia nearby, 3D terrain, countries, night side, history markers).
 - **History on this day** — on or off.
+- **Place names in Chinese and English** — on or off.
 - **Read the library again** — Atlas also re-reads it by itself a few minutes after Photos changes.
 
 The same keys can be set on the plugin's row in `cordis.patch.yml`: `library`, `history`, `nearby`,
-`basemap` (`night` | `amap` | `satellite` | `offline`), `awayKm`.
+`basemap` (`night` | `amap` | `satellite` | `offline`), `awayKm`, `placeNames`.
 
 ## Limits
 

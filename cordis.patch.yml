@@ -12,5 +12,8 @@
         basemap: night
         # Zoomed in, ask Wikipedia what is around the map's centre (sends that point).
         nearby: true
+        # Ask Wikidata for the Chinese / English names of the provinces, cities and
+        # districts in the photos, so either language finds them (sends only those names).
+        placeNames: true
         # A photo further than this from home (km) counts as a trip.
         awayKm: 100

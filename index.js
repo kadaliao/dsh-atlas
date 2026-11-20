@@ -52,7 +52,7 @@ const VENDOR = {
   'supercluster.min.js': 'text/javascript; charset=utf-8',
   'countries.json': 'application/json; charset=utf-8',
 };
-const SETTINGS_FIELDS = ['library', 'home', 'history', 'basemap', 'awayKm', 'nearby'];
+const SETTINGS_FIELDS = ['library', 'home', 'history', 'basemap', 'awayKm', 'nearby', 'placeNames'];
 /** Basemaps the panel offers; `auto` is the old name of `night`. */
 export const BASEMAPS = ['night', 'amap', 'satellite', 'offline'];
 const basemapOf = (v, fallback = 'night') => (v === 'auto' ? 'night' : BASEMAPS.includes(v) ? v : fallback);
@@ -75,6 +75,7 @@ export function settingsOf(config) {
     history: c.history !== false,
     basemap: basemapOf(c.basemap),
     nearby: c.nearby !== false,
+    placeNames: c.placeNames !== false,
     awayKm: Number.isFinite(away) && away >= 10 ? away : 100,
     home: validHome(c.home),
   };
@@ -96,6 +97,7 @@ export function mergeSettings(base, saved) {
   if (typeof s.history === 'boolean') out.history = s.history;
   if (typeof s.basemap === 'string' && (BASEMAPS.includes(s.basemap) || s.basemap === 'auto')) out.basemap = basemapOf(s.basemap);
   if (typeof s.nearby === 'boolean') out.nearby = s.nearby;
+  if (typeof s.placeNames === 'boolean') out.placeNames = s.placeNames;
   if (Number.isFinite(Number(s.awayKm)) && Number(s.awayKm) >= 10) out.awayKm = Number(s.awayKm);
   if ('home' in s) out.home = validHome(s.home);
   return out;
@@ -228,7 +230,7 @@ export function renderText(name, value) {
 }
 
 const SEARCH_PARAMS = {
-  place: { type: 'string', description: 'A place to match: country, province, city, district, or a street / landmark / venue name. Names are as Apple Maps gave them, usually in the Mac\'s language (北京市, 京都市, 日本); English country names also work.' },
+  place: { type: 'string', description: 'A place to match: country, province, city, district, or a street / landmark / venue name. Chinese or English both work (北京 or Beijing, 朝阳 or Chaoyang, 日本 or Japan); street and venue names only as Apple Maps gave them, in the Mac\'s language.' },
   country: { type: 'string', description: 'Country as an ISO code (JP) or name.' },
   from: { type: 'string', description: 'Earliest local date, YYYY, YYYY-MM or YYYY-MM-DD.' },
   to: { type: 'string', description: 'Latest local date, YYYY, YYYY-MM or YYYY-MM-DD (inclusive).' },
@@ -549,7 +551,7 @@ export function apply(ctx, config) {
       // No logger.
     }
   };
-  const atlas = createAtlas({ cacheDir: dir, settings: () => settings, log });
+  const atlas = createAtlas({ cacheDir: dir, settings: () => settings, log, userAgent: `dsh-atlas/${VERSION} (https://github.com/kadaliao/dsh-atlas)` });
   // Start reading in the background so the panel opens on a built index.
   setTimeout(() => void atlas.ensure().catch(() => {}), 1500);
 
@@ -583,7 +585,7 @@ export function apply(ctx, config) {
     let eventsError = '';
     if (settings.history) {
       try {
-        const feed = await fetchEvents(dir, language === 'en' ? 'en' : 'zh', when.month, when.day, { userAgent: `dsh-atlas/${VERSION} (DeepSeek Harness plugin)` });
+        const feed = await fetchEvents(dir, language === 'en' ? 'en' : 'zh', when.month, when.day, { userAgent: `dsh-atlas/${VERSION} (https://github.com/kadaliao/dsh-atlas)` });
         events = data ? rankEvents(feed.events, data.grid) : feed.events;
       } catch (error) {
         eventsError = String(error?.message ?? error);
@@ -639,7 +641,7 @@ export function apply(ctx, config) {
         ok: true,
         version: VERSION,
         ...st,
-        settings: { library: settings.library, history: settings.history, basemap: settings.basemap, awayKm: settings.awayKm, home: settings.home, nearby: settings.nearby },
+        settings: { library: settings.library, history: settings.history, basemap: settings.basemap, awayKm: settings.awayKm, home: settings.home, nearby: settings.nearby, placeNames: settings.placeNames },
         home: data?.homes.main ? { lat: data.homes.main.lat, lng: data.homes.main.lng, city: data.homes.main.city, cc: data.homes.main.cc } : null,
         trips: data?.trips.length ?? 0,
         people: data?.people.slice(0, 30).map((p) => p.name) ?? [],
@@ -780,7 +782,7 @@ export function apply(ctx, config) {
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { ok: false, reason: 'lat and lng' };
         const key = `${l}:${lat.toFixed(2)}:${lng.toFixed(2)}:${Math.round(Math.log2(Math.max(100, r)))}`;
         if (!nearbyCache.has(key)) {
-          const p = nearbyArticles(lat, lng, r, l, { userAgent: `dsh-atlas/${VERSION} (DeepSeek Harness plugin)` });
+          const p = nearbyArticles(lat, lng, r, l, { userAgent: `dsh-atlas/${VERSION} (https://github.com/kadaliao/dsh-atlas)` });
           nearbyCache.set(key, p);
           p.catch(() => nearbyCache.delete(key));
           while (nearbyCache.size > 300) nearbyCache.delete(nearbyCache.keys().next().value);
@@ -819,7 +821,7 @@ export function apply(ctx, config) {
           // Applies to this process anyway.
         }
         if (before.library !== settings.library) await atlas.rebuild();
-        else if (JSON.stringify(before.home) !== JSON.stringify(settings.home) || before.awayKm !== settings.awayKm) atlas.rederive();
+        else if (JSON.stringify(before.home) !== JSON.stringify(settings.home) || before.awayKm !== settings.awayKm || before.placeNames !== settings.placeNames) atlas.rederive();
         return stateView();
       }),
     );
