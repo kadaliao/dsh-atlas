@@ -2645,12 +2645,17 @@ window.__ModuleLoader__.load({
           // Remembered for this page only.
         }
       }, [mapReady, layers]);
+      // A trip's route is drawn while the trips list is open (and by the story
+      // while it plays); turning to anything else takes it off the globe.
+      useEffect(() => {
+        if (tab !== 'trips' && !story) setActiveTrip(null);
+      }, [tab, story]);
       useEffect(() => {
         const g = globeRef.current;
         if (!g || !mapReady || story) return;
-        const trip = trips.find((x) => x.id === activeTrip);
+        const trip = tab === 'trips' ? trips.find((x) => x.id === activeTrip) : null;
         g.setActiveTrip(trip ?? null, 1);
-      }, [mapReady, activeTrip, story]);
+      }, [mapReady, activeTrip, story, tab]);
 
       // Replay the years: chapter by chapter, the footprint growing behind it.
       const scenesRef = useRef({ key: null, list: [] });
@@ -2673,9 +2678,9 @@ window.__ModuleLoader__.load({
           if (!trip) return false;
           setFilter(null);
           setRange(null);
+          setActiveTrip(trip.id);
           if (cmd.story) setStory(trip);
           else {
-            setActiveTrip(trip.id);
             setTab('trips');
             g.fitBounds(trip.bbox, { maxZoom: 8 });
           }
@@ -2947,7 +2952,7 @@ window.__ModuleLoader__.load({
                       setSelection({ ids: trip.ids, title: trip.places.slice(0, 3).join(' → '), subtitle: dateRange(trip.start, trip.end), key: Date.now() });
                       globeRef.current?.fitBounds(trip.bbox, { maxZoom: 8 });
                     },
-                    onStory: (trip) => setStory(trip),
+                    onStory: (trip) => (setActiveTrip(trip.id), setStory(trip)),
                   })
                 : null,
               tab === 'stats'
@@ -3014,7 +3019,7 @@ window.__ModuleLoader__.load({
               onDone: (finished) => stopReplay(finished),
             })
           : null,
-        story && mapReady ? h(Story, { t, trip: story, globe: globeRef.current, onExit: () => setStory(null) }) : null,
+        story && mapReady ? h(Story, { key: story.id, t, trip: story, globe: globeRef.current, onExit: () => setStory(null) }) : null,
         viewer
           ? h(Viewer, {
               t,
