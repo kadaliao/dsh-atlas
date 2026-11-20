@@ -236,7 +236,7 @@ const SEARCH_PARAMS = {
   labels: {
     type: 'array',
     items: { type: 'string' },
-    description: 'What is in the photo, as words from Apple Photos\' own search index: scenes, objects, animals, activities, events — all must match. They are in the Mac\'s language (on a Chinese system: 海滩, 猫, 雪, 日落, 山, 美食, 生日; English words will not match there). A word with no match comes back with suggestions.',
+    description: 'What is in the photo, as words from Apple Photos\' own search index: scenes, objects, animals, activities, events — all must match. Chinese or English both work, whatever the Mac\'s language (猫 or cat, 海滩 or beach, 日落 or sunset); results name the labels in the Mac\'s language. A word with no match comes back with suggestions.',
   },
   people: { type: 'array', items: { type: 'string' }, description: 'Names of people or pets as named in Photos.' },
   nearLat: { type: 'number', description: 'With nearLng: only photos within nearKm of this point.' },

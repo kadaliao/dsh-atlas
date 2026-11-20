@@ -69,8 +69,9 @@ https://raw.githubusercontent.com/kadaliao/dsh-plugins/main/marketplace.json
 | `atlas_today` | 往年今天的照片，和历史上的今天 |
 | `atlas_look` | 看最多 4 张照片（给模型附上预览图） |
 
-标签就是"照片"App 自己做搜索用的词，语言跟随你的 Mac：中文系统下是 `猫`、`海滩`、`日落`、`雪`。
-匹配不上的词会返回相近的建议。
+标签就是"照片"App 自己做搜索用的词。"照片"只按 Mac 的系统语言存这些词，Atlas 会从 macOS 自带的
+"照片"翻译表里补上中文和英文名，所以不论系统是中文还是英文，`猫` 和 `cat`、`海滩` 和 `beach`
+都能找到同样的照片。地名和人名保持原样。匹配不上的词会返回相近的建议。
 
 ## 设置
 

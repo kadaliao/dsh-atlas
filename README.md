@@ -89,8 +89,10 @@ the page once after installing; **Atlas** appears in the left sidebar (or type `
 | `atlas_today` | This date in your photos and in world history |
 | `atlas_look` | Look at up to 4 photos (previews attached for the model) |
 
-Labels are the words Photos itself uses for search, in the language of your Mac: on a Chinese system
-`猫`, `海滩`, `日落`, `雪`. A word that matches nothing comes back with suggestions.
+Labels are the words Photos itself uses for search. Photos keeps them in the language of your Mac;
+Atlas adds their Chinese and English names from the translations macOS ships with Photos, so `猫` and
+`cat`, `海滩` and `beach` find the same photos on either system. Place and people names stay as they
+are. A word that matches nothing comes back with suggestions.
 
 ## Settings
 
