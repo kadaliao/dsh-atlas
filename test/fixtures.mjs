@@ -115,9 +115,10 @@ export const uuid = (n) => `${String(n).padStart(8, '0').toUpperCase()}-0000-400
  * Build a library bundle in a temp dir from rows
  * `{id, t, tz, lat, lng, video, place, labels: [lexemeId], score, hidden, trashed}`
  * and a lexicon `{id: {c: category number, w, s: []}}`.
- * Returns the bundle path. Needs `node:sqlite`.
+ * Its search index is `leo.sqlite` (macOS 27), or with `{index: 'psi'}` the
+ * `psi.sqlite` of macOS 26 and earlier. Returns the bundle path. Needs `node:sqlite`.
  */
-export async function makeLibrary(rows, lexicon = {}) {
+export async function makeLibrary(rows, lexicon = {}, { index = 'leo' } = {}) {
   const { DatabaseSync } = await import('node:sqlite');
   const root = mkdtempSync(join(tmpdir(), 'atlas-lib-'));
   const lib = join(root, 'Test.photoslibrary');
@@ -136,22 +137,25 @@ export async function makeLibrary(rows, lexicon = {}) {
     insX.run(pk, pk, r.tz ?? 28800, r.place ? revGeoBlob(r.place) : null, null);
   });
   db.close();
-  const leo = new DatabaseSync(join(lib, 'database', 'search', 'leo.sqlite'));
-  leo.exec(`CREATE TABLE lexicon (pk INTEGER PRIMARY KEY AUTOINCREMENT, lexeme_id INTEGER, type INTEGER, category INTEGER, content TEXT, identifier TEXT, score REAL);
-    CREATE TABLE items (pk INTEGER PRIMARY KEY AUTOINCREMENT, identifier TEXT UNIQUE, type INTEGER, lexeme_ids BLOB, date_created TIMESTAMP, change_timestamp TIMESTAMP, lexeme_scores BLOB, thumbnail_info BLOB);`);
-  const insL = leo.prepare('INSERT INTO lexicon (lexeme_id, type, category, content) VALUES (?,?,?,?)');
-  for (const [id, e] of Object.entries(lexicon)) {
-    insL.run(Number(id), 1, e.c, e.w);
-    for (const syn of e.s ?? []) insL.run(Number(id), 2, e.c, syn);
+  if (index === 'psi') writePsi(lib, DatabaseSync, rows, lexicon);
+  else {
+    const leo = new DatabaseSync(join(lib, 'database', 'search', 'leo.sqlite'));
+    leo.exec(`CREATE TABLE lexicon (pk INTEGER PRIMARY KEY AUTOINCREMENT, lexeme_id INTEGER, type INTEGER, category INTEGER, content TEXT, identifier TEXT, score REAL);
+      CREATE TABLE items (pk INTEGER PRIMARY KEY AUTOINCREMENT, identifier TEXT UNIQUE, type INTEGER, lexeme_ids BLOB, date_created TIMESTAMP, change_timestamp TIMESTAMP, lexeme_scores BLOB, thumbnail_info BLOB);`);
+    const insL = leo.prepare('INSERT INTO lexicon (lexeme_id, type, category, content) VALUES (?,?,?,?)');
+    for (const [id, e] of Object.entries(lexicon)) {
+      insL.run(Number(id), 1, e.c, e.w);
+      for (const syn of e.s ?? []) insL.run(Number(id), 2, e.c, syn);
+    }
+    const insI = leo.prepare('INSERT INTO items (identifier, type, lexeme_ids) VALUES (?,?,?)');
+    for (const r of rows) {
+      if (!r.labels?.length) continue;
+      const b = Buffer.alloc(r.labels.length * 4);
+      r.labels.forEach((id, i) => b.writeUInt32LE(id, i * 4));
+      insI.run(r.id, 1, b);
+    }
+    leo.close();
   }
-  const insI = leo.prepare('INSERT INTO items (identifier, type, lexeme_ids) VALUES (?,?,?)');
-  for (const r of rows) {
-    if (!r.labels?.length) continue;
-    const b = Buffer.alloc(r.labels.length * 4);
-    r.labels.forEach((id, i) => b.writeUInt32LE(id, i * 4));
-    insI.run(r.id, 1, b);
-  }
-  leo.close();
   // A thumbnail and a preview per photo.
   for (const r of rows) {
     const ch = r.id[0];
@@ -161,6 +165,35 @@ export async function makeLibrary(rows, lexicon = {}) {
     writeFileSync(join(lib, 'resources', 'derivatives', ch, `${r.id}_1_105_c.jpeg`), Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0xff, 0xd9]));
   }
   return lib;
+}
+
+/** leo categories as psi numbers them (see PSI_CATEGORIES); synonyms go one higher where psi has them. */
+const PSI_OF = { 4000: 1500, 3010: 1330 };
+const PSI_SYNONYM = { 1500: 1501 };
+
+/** A psi.sqlite as macOS 26 writes it: words are groups, synonyms groups owned by them, UUIDs two little-endian integers. */
+function writePsi(lib, DatabaseSync, rows, lexicon) {
+  const psi = new DatabaseSync(join(lib, 'database', 'search', 'psi.sqlite'));
+  psi.exec(`CREATE TABLE groups(category INT2, owning_groupid INT, content_string TEXT, normalized_string TEXT, lookup_identifier TEXT, score REAL, token_ranges_0 INT8, token_ranges_1 INT8);
+    CREATE TABLE assets(uuid_0 INT, uuid_1 INT, creationDate INT, UNIQUE(uuid_0, uuid_1));
+    CREATE TABLE ga(groupid INT, assetid INT, PRIMARY KEY(groupid, assetid));`);
+  const insG = psi.prepare('INSERT INTO groups (rowid, category, owning_groupid, content_string, normalized_string) VALUES (?,?,?,?,?)');
+  // Words end in a NUL, as Photos writes them. Synonym rows get ids past the words'.
+  let next = 1000;
+  for (const [id, e] of Object.entries(lexicon)) {
+    const cat = PSI_OF[e.c] ?? e.c;
+    insG.run(Number(id), cat, 0, `${e.w}\0`, e.w.toLowerCase());
+    for (const syn of e.s ?? []) insG.run(next++, PSI_SYNONYM[cat] ?? cat, Number(id), `${syn}\0`, syn.toLowerCase());
+  }
+  const insA = psi.prepare('INSERT INTO assets (rowid, uuid_0, uuid_1) VALUES (?,?,?)');
+  const insGA = psi.prepare('INSERT INTO ga (groupid, assetid) VALUES (?,?)');
+  rows.forEach((r, i) => {
+    if (!r.labels?.length) return;
+    const b = Buffer.from(r.id.replace(/-/g, ''), 'hex');
+    insA.run(i + 1, b.readBigInt64LE(0), b.readBigInt64LE(8));
+    for (const id of r.labels) insGA.run(id, i + 1);
+  });
+  psi.close();
 }
 
 /** Unix seconds of a local date-time at offset `tz` seconds. */
