@@ -61,7 +61,7 @@ the page once after installing; **Atlas** appears in the left sidebar (or type `
 ## What it reads, and what leaves your Mac
 
 - **Your Photos library, read-only.** Atlas opens `database/Photos.sqlite` and the search index
-  (`database/search/leo.sqlite`, or `psi.sqlite` on macOS 26 and earlier) read-only, and serves the previews Photos already made
+  (`database/search/leo.sqlite`, or `psi.sqlite` on macOS 10.15 to 26) read-only, and serves the previews Photos already made
   (`resources/derivatives`) to the panel. It never writes to the library. Hidden and deleted photos
   are left out.
 - **An index** of what it read (dates, coordinates, place names, labels) is cached under
@@ -74,8 +74,8 @@ the page once after installing; **Atlas** appears in the left sidebar (or type `
   map, which sends that point. Turn it off in the layers menu or settings.
 - **History on this day** asks Wikipedia for the events of today's date — only the date is sent.
 - **Place names in Chinese and English**: once per province, city and district in your photos, Atlas
-  asks [Wikidata](https://www.wikidata.org) for its name in the other language, so `北京` and
-  `Beijing` find the same photos. Only those names are sent, not where the photos are (which of the
+  asks [Wikidata](https://www.wikidata.org) for its names in Chinese, English and your Mac's own
+  languages, so `北京` and `Beijing` find the same photos. Only those names are sent, not where the photos are (which of the
   places of that name is meant is worked out on your Mac). The answers are kept in the cache. Turn it
   off in settings.
   It can be turned off in settings.
@@ -95,8 +95,8 @@ the page once after installing; **Atlas** appears in the left sidebar (or type `
 | `atlas_look` | Look at up to 4 photos (previews attached for the model) |
 
 Labels are the words Photos itself uses for search. Photos keeps them in the language of your Mac;
-Atlas adds their Chinese and English names from the translations macOS ships with Photos, so `猫` and
-`cat`, `海滩` and `beach` find the same photos on either system. Provinces, cities and districts are
+Atlas adds their names in Chinese, English and your Mac's other languages from the translations macOS
+ships with Photos, so `猫` and `cat`, `海滩` and `beach` find the same photos on either system. Provinces, cities and districts are
 named in both languages too (from Wikidata, see above); streets, venues and people stay as Photos
 has them. A word that matches nothing comes back with suggestions.
 

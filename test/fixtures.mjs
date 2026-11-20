@@ -116,7 +116,7 @@ export const uuid = (n) => `${String(n).padStart(8, '0').toUpperCase()}-0000-400
  * `{id, t, tz, lat, lng, video, place, labels: [lexemeId], score, hidden, trashed}`
  * and a lexicon `{id: {c: category number, w, s: []}}`.
  * Its search index is `leo.sqlite` (macOS 27), or with `{index: 'psi'}` the
- * `psi.sqlite` of macOS 26 and earlier. Returns the bundle path. Needs `node:sqlite`.
+ * `psi.sqlite` of macOS 13 to 26, `{index: 'psi5'}` that of macOS 10.15 to 12. Returns the bundle path. Needs `node:sqlite`.
  */
 export async function makeLibrary(rows, lexicon = {}, { index = 'leo' } = {}) {
   const { DatabaseSync } = await import('node:sqlite');
@@ -137,7 +137,7 @@ export async function makeLibrary(rows, lexicon = {}, { index = 'leo' } = {}) {
     insX.run(pk, pk, r.tz ?? 28800, r.place ? revGeoBlob(r.place) : null, null);
   });
   db.close();
-  if (index === 'psi') writePsi(lib, DatabaseSync, rows, lexicon);
+  if (index === 'psi' || index === 'psi5') writePsi(lib, DatabaseSync, rows, lexicon, index === 'psi5');
   else {
     const leo = new DatabaseSync(join(lib, 'database', 'search', 'leo.sqlite'));
     leo.exec(`CREATE TABLE lexicon (pk INTEGER PRIMARY KEY AUTOINCREMENT, lexeme_id INTEGER, type INTEGER, category INTEGER, content TEXT, identifier TEXT, score REAL);
@@ -168,11 +168,14 @@ export async function makeLibrary(rows, lexicon = {}, { index = 'leo' } = {}) {
 }
 
 /** leo categories as psi numbers them (see PSI_CATEGORIES); synonyms go one higher where psi has them. */
-const PSI_OF = { 4000: 1500, 3010: 1330 };
-const PSI_SYNONYM = { 1500: 1501 };
+const PSI_OF = { 4000: 1500, 3000: 1300, 3010: 1330 };
+// Pets' "Pet", "Pets" are in 1331, as Photos writes them.
+const PSI_SYNONYM = { 1500: 1501, 1300: 1301, 1330: 1331 };
+/** The same in the psi of macOS 10.15 to 12, which has no synonyms. */
+const PSI5_OF = { 4000: 2024, 3000: 2021, 3010: 2021 };
 
 /** A psi.sqlite as macOS 26 writes it: words are groups, synonyms groups owned by them, UUIDs two little-endian integers. */
-function writePsi(lib, DatabaseSync, rows, lexicon) {
+function writePsi(lib, DatabaseSync, rows, lexicon, photos5 = false) {
   const psi = new DatabaseSync(join(lib, 'database', 'search', 'psi.sqlite'));
   psi.exec(`CREATE TABLE groups(category INT2, owning_groupid INT, content_string TEXT, normalized_string TEXT, lookup_identifier TEXT, score REAL, token_ranges_0 INT8, token_ranges_1 INT8);
     CREATE TABLE assets(uuid_0 INT, uuid_1 INT, creationDate INT, UNIQUE(uuid_0, uuid_1));
@@ -181,9 +184,9 @@ function writePsi(lib, DatabaseSync, rows, lexicon) {
   // Words end in a NUL, as Photos writes them. Synonym rows get ids past the words'.
   let next = 1000;
   for (const [id, e] of Object.entries(lexicon)) {
-    const cat = PSI_OF[e.c] ?? e.c;
+    const cat = (photos5 ? PSI5_OF : PSI_OF)[e.c] ?? e.c;
     insG.run(Number(id), cat, 0, `${e.w}\0`, e.w.toLowerCase());
-    for (const syn of e.s ?? []) insG.run(next++, PSI_SYNONYM[cat] ?? cat, Number(id), `${syn}\0`, syn.toLowerCase());
+    if (!photos5 && PSI_SYNONYM[cat]) for (const syn of e.s ?? []) insG.run(next++, PSI_SYNONYM[cat], Number(id), `${syn}\0`, syn.toLowerCase());
   }
   const insA = psi.prepare('INSERT INTO assets (rowid, uuid_0, uuid_1) VALUES (?,?,?)');
   const insGA = psi.prepare('INSERT INTO ga (groupid, assetid) VALUES (?,?)');
