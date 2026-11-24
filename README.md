@@ -50,6 +50,17 @@ https://raw.githubusercontent.com/kadaliao/dsh-plugins/main/marketplace.json
 and install **Atlas** from Discover. Or paste `@kadaliao/dsh-atlas` into the plugin manager. Refresh
 the page once after installing; **Atlas** appears in the left sidebar (or type `/atlas`).
 
+## Updates
+
+About 20 seconds after the page opens, and every six hours after that, the plugin checks for a newer
+version through Harness's own plugin manager. It is the same check as the Versions section in
+**Plugins**, and it asks the npm registry only about `@kadaliao/dsh-*` package names. A new version
+shows up as a card in the bottom-right corner. **Update** has Harness install it, after checking that
+it works with your Harness; if the install fails, the version you had is put back. **Later** hides the
+card for a day, **Skip this version** until the next one. With several of these plugins installed, one
+card covers all of them, including copies too old to check for themselves. Copies installed from a
+folder or from Git are not checked.
+
 ## Requirements
 
 - macOS with a **Photos** library. Atlas reads the library Photos opens by default; another one can
