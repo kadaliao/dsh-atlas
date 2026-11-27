@@ -7,7 +7,7 @@ window.__ModuleLoader__.load({
 
     const NS = 'atlas';
     // This client half's version; test/updates.test.mjs keeps it equal to package.json.
-    const VERSION = '0.1.6';
+    const VERSION = '0.1.7';
     // The version and GitHub link in the title chip, from the shared update block once apply(ctx) has run.
     let About = null;
     const PANEL_ID = 'atlas';
