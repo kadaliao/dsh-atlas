@@ -1,154 +1,119 @@
-# Atlas
+# 足迹（Atlas）
 
-English | [简体中文](README.zh-CN.md)
+简体中文 | [English](README.en.md)
 
-Your photo library on a globe, inside [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness).
+把你的相册放到 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 里的一颗地球上。
 
-- **A night globe that zooms to street level.** Every place you took a photo glows; thumbnails pop up
-  where you were, captioned with the place and the years, and split apart as you zoom in. Zoomed in,
-  the map has 3D terrain and buildings, shops and landmarks, the **places you have been** (the venues
-  and landmarks Photos recognised in your photos — click one for its photos) and **Wikipedia nearby**
-  (what the articles around you say, with a picture). Countries you have been to are lit up, the
-  night side of the Earth is shaded, and the globe turns slowly while you are not touching it.
-- **Four basemaps.** *Night* (OpenStreetMap, recoloured for the night globe), *Amap* (China in full
-  Chinese detail; the night map abroad), *Satellite* and *Outline* (nothing fetched).
-- **The best photos first.** Wherever you open a set of photos — a pin, a place, a search, a trip —
-  a **featured** row comes first: the best few by Photos' own aesthetic score and your favourites,
-  near-duplicates and bursts skipped, spread over the days; screenshots, documents and saved images
-  kept out. Everything else follows, by time, one click away.
-- **Your trips, found for you.** Runs of photos taken far from home become trips, with their stops,
-  dates and distance. A few photos in one afternoon are a stopover, not a trip, and pictures saved
-  from other apps (someone else's photos) never count as where you were. Pick one to see its route; press **Story** and the camera
-  flies stop by stop while that stop's best photos drift across the screen.
-- **A timeline of your years.** Drag across it to see one stretch of time, click a year, or press
-  **Replay the years**: the camera flies from chapter to chapter — every trip, and the cities of each
-  year — showing each one's best photos while your footprint grows behind it.
-- **On this day, twice.** What you photographed on this date in earlier years — and what happened in
-  the world on this date (from Wikipedia), the events near places you have been first: *"1987: the
-  first mobile network opened in Guangzhou — 1 km from where you took photos."*
-- **Search like you talk.** Type `Kyoto 2023 cat`, `beach video`, `summer` in the panel — or, in
-  Chinese, run the words together: `北京的猫`, `2023年夏天在珠海`, `去年`. The map filters to the
-  matches and the list shows every match, located or not. A word is looked up in what Photos
-  recognised (scenes, venues) and in the names of places and moments (`夫子庙`); one your library has
-  no photos of finds nothing and suggests words it does have. In any conversation, ask the model — *"Did I photograph cats in Japan? Show
-  me on the map"*, *"Recap my April trip as a story"*, *"How many countries have I been to?"* — and
-  the map moves as it answers.
-- **Footprint numbers.** Countries and regions, cities, days in each, trips, kilometres, a year-by-year
-  breakdown.
+- **一颗能一路放大到街道的夜色地球。** 拍过照的地方都在发光，缩略图从你去过的地方冒出来，下面标着地点和年份，越放大分得越细。
+  放大后有 3D 地形和 3D 建筑、店铺和地标，还有 **我去过的地方**（"照片"从你照片里认出的店铺、景点、楼宇，点开就是在那里拍的照片）
+  和 **附近百科**（周围的维基百科条目，带配图和简介）。去过的国家会被点亮，地球的夜半边有阴影，你不碰它的时候它会慢慢转。
+- **四种底图。** *夜景*（OpenStreetMap，配成夜色）、*高德*（国内全中文、最详细；国外用夜景地图）、*卫星*、*轮廓*（完全不联网）。
+- **好照片先看。** 不管从哪里打开一组照片——缩略图、地点、搜索、旅行——最上面先是 **精选**：按"照片"自己的美学评分和你的收藏挑出最好的几张，
+  跳过连拍和重复镜头，分散到不同日子；截图、文档、保存下来的图片不进精选。其余的按时间排在后面，点一下就展开。
+- **旅行自动整理好。** 离家很远时连续拍的照片会被归成一次旅行，有经停的城市、日期和里程。
+  一个下午拍的几张算路过，不算旅行；从别的 App 存下来的图（别人拍的）不算你去过的地方。
+  点一次旅行看路线；按 **故事**，镜头一站一站飞过去，每一站最好的几张照片缓缓铺开。
+- **这些年的时间轴。** 在上面拖动看一段时间，点某一年，或者按 **回放这些年**：镜头一章一章飞过去——每一次旅行、
+  每一年常待的城市——每一章放出最好的几张照片，足迹在身后慢慢长出来。
+- **两种"那年今天"。** 往年今天你拍了什么；以及世界上的今天发生过什么（来自维基百科），优先挑发生在你去过的地方附近的：
+  *"1987 年：中国内地首个模拟信号移动电话通信网在广州开通——离你在广州拍照的地方 1 公里。"*
+- **像说话一样搜索。** 在面板里输入 `京都 2023 猫`、`海滩 视频`、`夏天`，连着写也行：`北京的猫`、`2023年夏天在珠海`、`去年`。
+  地图只显示匹配的照片，列表里是全部匹配（没有位置的也在）。词会在"照片"认出的内容（场景、店铺景点）
+  和地点、时刻的名字里找（`夫子庙`）；图库里没有的词什么也不匹配，并给出图库里有的词。
+  在任何对话里问模型——*"我在日本拍过猫吗？在地图上给我看看"*、*"把我 4 月那次旅行用故事模式放一遍"*、
+  *"我去过多少个国家？"*——它回答的同时地图会跟着动。
+- **足迹统计。** 去过的国家和地区、城市、在每个地方待了几天、旅行次数、公里数，还有逐年对比。
 
-Bilingual (English, 简体中文).
+中英双语。
 
-## Install
+## 安装
 
-Atlas is listed in the [DSH Plugins](https://github.com/kadaliao/dsh-plugins) market. Turn on
-**Plugins → Experimental plugins → Custom plugin markets**, add the market under **Discover → Sources**:
+足迹收录在 [DSH 插件集](https://github.com/kadaliao/dsh-plugins) 市场里。先打开
+**插件 → 实验性插件 → 自定义插件市场**，在 **发现 → 来源** 里添加：
 
 ```
 https://raw.githubusercontent.com/kadaliao/dsh-plugins/main/marketplace.json
 ```
 
-and install **Atlas** from Discover. Or paste `@kadaliao/dsh-atlas` into the plugin manager. Refresh
-the page once after installing; **Atlas** appears in the left sidebar (or type `/atlas`).
+然后在"发现"里安装 **足迹**。也可以把 `@kadaliao/dsh-atlas` 粘贴到插件管理器里。装好后刷新一次页面，
+左侧栏会出现 **足迹**（或输入 `/atlas`）。
 
-## Updates
+## 更新
 
-Each time you open the Atlas panel, the plugin checks whether a newer version of itself is out;
-opening it again within a minute reuses the answer, and nothing checks in the background. The check
-goes through Harness's own plugin manager, the same check as the Versions section in **Plugins**, and
-asks the npm registry only about this package. A newer version shows as a bar across the top of the
-panel. **Update** has Harness install it, after checking that it works with your Harness; if the
-install fails, the version you had is put back. While it updates, the panel closes, and it opens again
-once the new version is in. **Later** hides the bar for a day, **Skip this version** until the next
-one. Copies installed from a folder or from Git are not checked.
+每次打开足迹面板，插件会检查一次自己有没有新版本；一分钟内再打开用上次的结果，后台不定时检查。检查走 Harness 自己的插件管理，和「插件」页「版本」一栏是同一个检查，只向 npm 查询这一个包。有新版本时，面板顶部会出现一条提示：点「更新」由 Harness 安装新版本，装之前先确认它和你的 Harness 兼容，装失败会把原来的版本装回去。更新时面板会先关闭，装好后自动重新打开。「稍后」一天内不再提醒，「跳过此版本」到下一个版本出来前不再提醒。从本地文件夹或 Git 装的不检查。
 
-## Requirements
+## 要求
 
-- macOS with a **Photos** library. Atlas reads the library Photos opens by default; another one can
-  be picked in the panel's settings.
-- DeepSeek Harness 0.2.x with the Web UI (the desktop app, or `dsh web`).
-- If the panel says it cannot read the library: give **DeepSeek Harness** Full Disk Access in
-  System Settings → Privacy & Security → Full Disk Access, then restart it.
+- macOS，有"照片"图库。足迹默认读"照片"App 默认打开的图库，也可以在面板的设置里换成别的。
+- DeepSeek Harness 0.2.x 的网页界面（桌面版，或 `dsh web`）。
+- 如果面板提示读不到图库：在"系统设置 → 隐私与安全性 → 完全磁盘访问权限"里给 **DeepSeek Harness**
+  打开权限，然后重启它。
 
-## What it reads, and what leaves your Mac
+## 读了什么，什么会离开你的 Mac
 
-- **Your Photos library, read-only.** Atlas opens `database/Photos.sqlite` and the search index
-  (`database/search/leo.sqlite`, or `psi.sqlite` on macOS 10.15 to 26) read-only, and serves the previews Photos already made
-  (`resources/derivatives`) to the panel. It never writes to the library. Hidden and deleted photos
-  are left out.
-- **An index** of what it read (dates, coordinates, place names, labels) is cached under
-  `~/.dsh/cache/atlas/`. Nothing is written to your conversations.
-- **Map tiles**: like any web map, the tile servers see which area you look at. *Night* uses
-  [OpenFreeMap](https://openfreemap.org); 3D terrain uses the public Terrarium elevation tiles on AWS
-  Open Data; *Amap* additionally fetches Amap (高德) tiles inside China; *Satellite* fetches Esri World
-  Imagery. Choose *Outline* to fetch nothing.
-- **Wikipedia nearby**: zoomed in, the panel asks Wikipedia for articles around the centre of the
-  map, which sends that point. Turn it off in the layers menu or settings.
-- **History on this day** asks Wikipedia for the events of today's date — only the date is sent.
-- **Place names in Chinese and English**: once per province, city and district in your photos, Atlas
-  asks [Wikidata](https://www.wikidata.org) for its names in Chinese, English and your Mac's own
-  languages, so `北京` and `Beijing` find the same photos. Only those names are sent, not where the photos are (which of the
-  places of that name is meant is worked out on your Mac). The answers are kept in the cache. Turn it
-  off in settings.
-  It can be turned off in settings.
-- **The model** sees what its tools return: counts, dates, place names, photo ids and labels. It sees
-  a photo itself only when it calls `atlas_look` (at most 4 previews per call), which is sent to your
-  model provider like any other image.
+- **照片图库，只读。** 足迹以只读方式打开 `database/Photos.sqlite` 和搜索索引 `database/search/leo.sqlite`（macOS 10.15 到 26 是 `psi.sqlite`），
+  把"照片"已经生成好的预览图（`resources/derivatives`）提供给面板。它从不写入图库。隐藏和已删除的照片不会出现。
+- **索引**（日期、坐标、地名、标签）缓存在 `~/.dsh/cache/atlas/`。不往你的对话里写任何东西。
+- **地图瓦片**：和所有网页地图一样，瓦片服务器能看到你在看哪个区域。*夜景* 用 [OpenFreeMap](https://openfreemap.org)；
+  3D 地形用 AWS Open Data 上公开的 Terrarium 高程瓦片；*高德* 还会在国内范围内请求高德瓦片；*卫星* 请求 Esri World Imagery。
+  选 *轮廓* 就什么都不联网。
+- **附近百科**：放大后，面板会向维基百科查询地图中心附近的条目，会发送这个位置。可以在图层菜单或设置里关掉。
+- **历史上的今天** 会向维基百科请求今天日期的历史事件，只发送日期。可以在设置里关掉。
+- **地名中英互通**：照片里的每个省、市、区，足迹会向[维基数据](https://www.wikidata.org)查一次它的中文、英文和 Mac 系统语言的名字，
+  这样搜 `北京` 和 `Beijing` 都能找到同样的照片。只发送这些地名，不发送照片的位置（同名的地方指哪一个，在你的 Mac 上判断）。
+  查到的结果存在缓存里。可以在设置里关掉。
+- **模型** 能看到它调用的工具返回的内容：数量、日期、地名、照片 id 和标签。只有它调用 `atlas_look` 时
+  才会看到照片本身（每次最多 4 张预览图），这些图会像其他图片一样发给你的模型供应商。
 
-## Tools for the model
+## 给模型的工具
 
-| Tool | What it does |
+| 工具 | 作用 |
 | --- | --- |
-| `atlas_search` | Find photos by place, country, dates, months, labels (what is in them), people and distance; highlights them on the map |
-| `atlas_show` | Open the map and fly to a search, a trip (optionally as a story), photos or an area |
-| `atlas_trips` | The list of trips, or one trip's stops and photos |
-| `atlas_stats` | Countries, cities, days, trips and distance, overall or for a year |
-| `atlas_today` | This date in your photos and in world history |
-| `atlas_look` | Look at up to 4 photos (previews attached for the model) |
+| `atlas_search` | 按地点、国家、日期、月份、标签（照片里有什么）、人物、距离找照片，并在地图上高亮 |
+| `atlas_show` | 打开地图，飞到一次搜索的结果、一次旅行（可以用故事模式播放）、几张照片或一片区域 |
+| `atlas_trips` | 旅行列表，或某一次旅行的经停城市和照片 |
+| `atlas_stats` | 国家、城市、天数、旅行次数和里程，全部年份或某一年 |
+| `atlas_today` | 往年今天的照片，和历史上的今天 |
+| `atlas_look` | 看最多 4 张照片（给模型附上预览图） |
 
-Labels are the words Photos itself uses for search. Photos keeps them in the language of your Mac;
-Atlas adds their names in Chinese, English and your Mac's other languages from the translations macOS
-ships with Photos, so `猫` and `cat`, `海滩` and `beach` find the same photos on either system. Provinces, cities and districts are
-named in both languages too (from Wikidata, see above); streets, venues and people stay as Photos
-has them. A word that matches nothing comes back with suggestions.
+标签就是"照片"App 自己做搜索用的词。"照片"只按 Mac 的系统语言存这些词，Atlas 会从 macOS 自带的
+"照片"翻译表里补上中文、英文和 Mac 其他系统语言的名字，所以不论系统是中文还是英文，`猫` 和 `cat`、`海滩` 和 `beach`
+都能找到同样的照片。省、市、区也有中英两种名字（来自维基数据，见上文）；街道、店名和人名保持"照片"里的样子。
+匹配不上的词会返回相近的建议。
 
-## Settings
+## 设置
 
-The gear button in the panel:
+面板右上角的齿轮：
 
-- **Photos library** — a path to a `.photoslibrary`, or empty for the default one.
-- **Home** — found from your photos (the place with the most days each year); pin it to the map's
-  centre if that guess is wrong.
-- **A trip starts this far from home** — 100 km by default.
-- **Map** — Night, Amap, Satellite or Outline (also in the layers menu, with the layers themselves:
-  places, Wikipedia nearby, 3D terrain, countries, night side, history markers).
-- **History on this day** — on or off.
-- **Place names in Chinese and English** — on or off.
-- **Read the library again** — Atlas also re-reads it by itself a few minutes after Photos changes.
+- **照片图库**：某个 `.photoslibrary` 的路径，留空用默认图库。
+- **常住地**：从照片推断（每年待得最久的地方）；推断错了可以把地图中心设为常住地。
+- **离家多远算旅行**：默认 100 公里。
+- **底图**：夜景、高德、卫星或轮廓（图层菜单里也能切换，还有各个图层的开关：我去过的地方、附近百科、3D 地形、去过的国家、夜幕、历史事件）。
+- **历史上的今天**：开或关。
+- **地名中英互通**：开或关。
+- **重新读取图库**："照片"有变化后，足迹也会在几分钟内自己重新读取。
 
-The same keys can be set on the plugin's row in `cordis.patch.yml`: `library`, `history`, `nearby`,
-`basemap` (`night` | `amap` | `satellite` | `offline`), `awayKm`, `placeNames`.
+同样的选项也可以写在 `cordis.patch.yml` 里插件那一行：`library`、`history`、`nearby`、`basemap`（`night` | `amap` | `satellite` | `offline`）、`awayKm`、`placeNames`。
 
-## Limits
+## 限制
 
-- **Amap** is fetched from its public tile endpoint without a key, which Amap does not document for
-  third-party use; it may stop working at any time, and then China falls back to the night map.
-  Inside China, Atlas shifts what it draws to Amap's GCJ-02 datum so photos line up with the streets.
-- **Satellite** imagery is Esri's; check Esri's terms for your use. It is off unless you choose it.
+- **高德** 走的是不带 key 的公开瓦片接口，高德没有对第三方开放说明，随时可能失效；失效后国内会回落到夜景地图。
+  在国内，足迹会把自己画的东西换算到高德的 GCJ-02 坐标，照片才能和街道对上。
+- **卫星** 影像来自 Esri，使用前请看 Esri 的条款。默认不开，你选了才用。
 
-- Only photos with a location are on the map; the rest still count in search and "on this day".
-- Videos play when the original is on this Mac; with **Optimize Mac Storage** many originals stay in
-  iCloud, and Atlas shows the preview instead.
-- The Photos database format is Apple's and undocumented; Atlas is tested on the libraries of recent
-  macOS versions. If a future one changes it, the panel says it cannot read the library.
+- 只有带地点的照片会上地图；没有地点的照片依然能被搜索，也会出现在"那年今天"里。
+- 原视频在这台 Mac 上才能播放；开了"优化 Mac 储存空间"时很多原件在 iCloud 里，足迹会改为显示预览图。
+- "照片"的数据库格式是 Apple 私有、没有文档的；足迹在近几版 macOS 的图库上测试过。如果以后的版本改了格式，
+  面板会提示读不到图库。
 
-## Development
+## 开发
 
 ```bash
-npm test                       # node --test test/*.test.mjs (Node 24+, uses node:sqlite)
-node scripts/build-countries.mjs   # rebuild vendor/countries.json from Natural Earth
+npm test                           # node --test test/*.test.mjs（需要 Node 24+，用到 node:sqlite）
+node scripts/build-countries.mjs   # 从 Natural Earth 重新生成 vendor/countries.json
 ```
 
-Try a working copy in a throwaway Harness home:
+在一个临时的 Harness 目录里试用工作副本：
 
 ```bash
 DSH=/Applications/DeepSeek\ Harness.app/Contents/Resources/runtime/cli/bin/dsh
@@ -157,18 +122,16 @@ export DSH_HOME=$(mktemp -d)
 "$DSH" web --no-open --port 3917
 ```
 
-Layout: `index.js` (Host half: routes, tools), `client.js` (Web Client half: panel, globe, chat
-cards), `lib/` (library reader, trips, stats, search, on this day), `vendor/` (MapLibre GL JS 5.24,
-Supercluster 9.1, Natural Earth 1:110m countries).
+目录：`index.js`（Host 半边：路由、工具）、`client.js`（网页端：面板、地球、对话卡片）、`lib/`（图库读取、
+旅行、统计、搜索、那年今天）、`vendor/`（MapLibre GL JS 5.24、Supercluster 9.1、Natural Earth 1:110m 国界）。
 
-## Credits
+## 致谢
 
-[MapLibre GL JS](https://maplibre.org) (BSD-3-Clause), [Supercluster](https://github.com/mapbox/supercluster)
-(ISC), [OpenFreeMap](https://openfreemap.org) tiles © [OpenStreetMap](https://www.openstreetmap.org/copyright)
-contributors, terrain from Mapzen Terrarium on AWS Open Data, © 高德地图 AutoNavi (Amap basemap),
-Esri World Imagery (Satellite basemap), [Natural Earth](https://www.naturalearthdata.com) (public domain),
-[Wikipedia](https://www.wikipedia.org) "On this day" (CC BY-SA).
+[MapLibre GL JS](https://maplibre.org)（BSD-3-Clause）、[Supercluster](https://github.com/mapbox/supercluster)（ISC）、
+[OpenFreeMap](https://openfreemap.org) 瓦片 © [OpenStreetMap](https://www.openstreetmap.org/copyright) 贡献者、
+Mapzen Terrarium 地形（AWS Open Data）、© 高德地图 AutoNavi（高德底图）、Esri World Imagery（卫星底图）、
+[Natural Earth](https://www.naturalearthdata.com)（公有领域）、[维基百科](https://www.wikipedia.org)"历史上的今天"（CC BY-SA）。
 
-## License
+## 许可
 
-MIT.
+MIT。
