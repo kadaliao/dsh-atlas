@@ -1,6 +1,7 @@
 {
   "meta": {
     "title": "Atlas",
-    "description": "Your photo library on a globe: places light up, thumbnails pop up where you were, trips you can replay as a story, and every day brings back this date in your photos and in world history near places you have been."
+    "description": "Your photo library on a globe: places light up, thumbnails pop up where you were, trips you can replay as a story, and every day brings back this date in your photos and in world history near places you have been.",
+    "detail": "README.zh-CN.md"
   }
 }
